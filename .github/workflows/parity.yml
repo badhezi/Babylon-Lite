@@ -2,7 +2,7 @@ name: Parity — Dispose & Material Swap
 
 on:
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   parity:

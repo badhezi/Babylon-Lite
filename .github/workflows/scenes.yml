@@ -2,7 +2,7 @@ name: Scene Parity
 
 on:
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   scenes:
