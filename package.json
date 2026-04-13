@@ -4,7 +4,7 @@
     "packageManager": "pnpm@9.15.4",
     "scripts": {
         "dev": "pnpm --filter @babylon-lite/parity-harness dev",
-        "dev:lab": "tsx scripts/build-bundle-scenes.ts && pnpm --filter @babylon-lite/manual-lab dev",
+        "dev:lab": "tsx scripts/build-bundle-scenes.ts && pnpm --filter @babylon-lite/lab dev",
         "build": "pnpm --filter babylon-lite build",
         "build:prod": "pnpm --filter babylon-lite build:prod",
         "build:bundle-scenes": "tsx scripts/build-bundle-scenes.ts",

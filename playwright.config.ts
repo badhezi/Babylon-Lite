@@ -48,7 +48,7 @@ export default defineConfig({
         },
     },
     webServer: {
-        command: "pnpm --filter manual-lab dev",
+        command: "pnpm --filter lab dev",
         port: 5174,
         reuseExistingServer: true,
         timeout: 15_000,
