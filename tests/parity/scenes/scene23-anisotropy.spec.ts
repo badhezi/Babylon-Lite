@@ -2,7 +2,9 @@
  * Scene 23 — PBR Anisotropy Parity Test
  *
  * Metallic sphere (metallic=1, roughness=0) with anisotropic reflections.
- * Uses seekTime=0 to freeze at initial pose (intensity=1.0).
+ * Uses seekTime=3 to freeze at intensity≈0.39 (moderate anisotropy).
+ * seekTime=0 gives intensity=1.0 which makes the bent normal hyper-sensitive
+ * to cotangent frame precision, amplifying sub-pixel dpdx/dpdy differences.
  *
  * Assertions:
  * - Full image MAD ≤ maxMad
