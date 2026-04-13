@@ -5,6 +5,7 @@
 export interface SphereMeshData {
     positions: Float32Array;
     normals: Float32Array;
+    uvs: Float32Array;
     indices: Uint32Array;
     vertexCount: number;
     indexCount: number;
@@ -37,6 +38,7 @@ export function createSphereData(options: SphereOptions = {}): SphereMeshData {
 
     const positions = new Float32Array(totalVertices * 3);
     const normals = new Float32Array(totalVertices * 3);
+    const uvs = new Float32Array(totalVertices * 2);
     const indices = new Uint32Array(totalIndices);
 
     let vIdx = 0;
@@ -59,6 +61,9 @@ export function createSphereData(options: SphereOptions = {}): SphereMeshData {
             normals[vIdx * 3] = nx;
             normals[vIdx * 3 + 1] = ny;
             normals[vIdx * 3 + 2] = nz;
+
+            uvs[vIdx * 2] = normalizedY;
+            uvs[vIdx * 2 + 1] = normalizedZ;
 
             vIdx++;
         }
@@ -84,6 +89,7 @@ export function createSphereData(options: SphereOptions = {}): SphereMeshData {
     return {
         positions,
         normals,
+        uvs,
         indices,
         vertexCount: totalVertices,
         indexCount: totalIndices,

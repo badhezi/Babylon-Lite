@@ -38,19 +38,29 @@ anisoT = normalize(anisoT * anisoDir.x + anisoB * anisoDir.y);
 anisoB = normalize(cross(N, anisoT));
 }`;
     }
-    // Derive tangent frame geometrically (cross with up vector)
+    // Cotangent frame from UV screen-space derivatives — matches BJS cotangent_frame()
+    // BJS negates dpdy via (-yFactor_) where yFactor_=1 in WebGPU
     return `var anisoT: vec3<f32>;
 var anisoB: vec3<f32>;
 {
-var aniso_t_raw = cross(vec3<f32>(0.0, 1.0, 0.0), N);
-if (dot(aniso_t_raw, aniso_t_raw) < 0.001) {
-aniso_t_raw = cross(vec3<f32>(1.0, 0.0, 0.0), N);
-}
-let anisoDir = normalize(vec2<f32>(material.anisotropyParams.y, material.anisotropyParams.z));
-let rawT = normalize(aniso_t_raw);
-let rawB = normalize(cross(N, rawT));
-anisoT = normalize(rawT * anisoDir.x + rawB * anisoDir.y);
-anisoB = normalize(cross(N, anisoT));
+let aniso_dp1 = dpdx(input.worldPos);
+let aniso_dp2 = -dpdy(input.worldPos);
+let aniso_duv1 = dpdx(input.uv);
+let aniso_duv2 = -dpdy(input.uv);
+let aniso_dp2perp = cross(aniso_dp2, N);
+let aniso_dp1perp = cross(N, aniso_dp1);
+var aniso_t = aniso_dp2perp * aniso_duv1.x + aniso_dp1perp * aniso_duv2.x;
+var aniso_b = aniso_dp2perp * aniso_duv1.y + aniso_dp1perp * aniso_duv2.y;
+let aniso_det = max(dot(aniso_t, aniso_t), dot(aniso_b, aniso_b));
+let aniso_inv = select(inverseSqrt(aniso_det), 0.0, aniso_det == 0.0);
+aniso_t *= aniso_inv;
+aniso_b *= aniso_inv;
+let aniso_tn = normalize(aniso_t);
+let aniso_bn = normalize(aniso_b);
+let anisoTBN = mat3x3<f32>(aniso_tn, aniso_bn, N);
+let anisoDir = vec3<f32>(material.anisotropyParams.y, material.anisotropyParams.z, 0.0);
+anisoT = normalize(anisoTBN * anisoDir);
+anisoB = normalize(cross(anisoTBN[2], anisoT));
 }`;
 }
 

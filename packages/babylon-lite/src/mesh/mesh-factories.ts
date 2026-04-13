@@ -73,7 +73,7 @@ function createMeshFromData(device: GPUDevice, name: string, positions: Float32A
 /** Create a sphere mesh. Caller must assign material. */
 export function createSphere(engine: Engine, options?: SphereOptions): Mesh {
     const data = createSphereData(options);
-    return createMeshFromData((engine as EngineInternal).device, "sphere", data.positions, data.normals, data.indices);
+    return createMeshFromData((engine as EngineInternal).device, "sphere", data.positions, data.normals, data.indices, data.uvs);
 }
 
 /** Create a box mesh. Caller must assign material. */
