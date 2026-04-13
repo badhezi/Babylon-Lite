@@ -519,8 +519,8 @@ Scene 17 (`scene17-pbr-std-thin-instances`) validates PBR thin instances: a PBR 
 | `src/material/pbr/pbr-renderable.ts` | PBR thin-instance detection, fragment loading, instanced draw |
 | `src/material/pbr/pbr-pipeline.ts` | PBR pipeline vertex buffer layouts for thin instances |
 | `src/shader/fragments/thin-instance-fragment.ts` | ShaderFragment for instance matrix/color — shared by PBR and Standard |
-| `apps/manual-lab/src/lite/scene16.ts` | Reference scene: 40×40×40 = 64K colored cubes with `disableLighting` |
-| `apps/manual-lab/src/lite/scene17.ts` | Reference scene: PBR + Standard thin instances in one scene |
+| `lab/src/lite/scene16.ts` | Reference scene: 40×40×40 = 64K colored cubes with `disableLighting` |
+| `lab/src/lite/scene17.ts` | Reference scene: PBR + Standard thin instances in one scene |
 | `tests/parity/scene16-thin-instances.spec.ts` | Parity test for Standard thin instances |
 | `tests/parity/scene17-pbr-std-thin-instances.spec.ts` | Parity test for PBR + Standard thin instances |
 

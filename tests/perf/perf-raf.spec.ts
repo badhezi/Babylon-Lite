@@ -2,7 +2,7 @@
  * RAF Performance Benchmark
  *
  * Measures per-frame requestAnimationFrame callback duration for Lite vs BJS
- * across all scenes. Writes results to apps/manual-lab/public/perf-manifest.json
+ * across all scenes. Writes results to lab/public/perf-manifest.json
  * which the dashboard Perf tab consumes.
  *
  * Run:  npx playwright test tests/parity/perf-raf.spec.ts
@@ -53,7 +53,7 @@ const SELECTED = process.env.PERF_SCENES ? process.env.PERF_SCENES.split(",").ma
 
 const SCENES = SELECTED ? ALL_SCENES.filter((s) => SELECTED.includes(s.name)) : ALL_SCENES;
 
-const MANIFEST_PATH = resolve(__dirname, "../../apps/manual-lab/public/perf-manifest.json");
+const MANIFEST_PATH = resolve(__dirname, "../../lab/public/perf-manifest.json");
 
 // ── RAF instrumentation (injected before page scripts) ─────────────
 

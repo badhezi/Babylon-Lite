@@ -210,7 +210,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 
-export const labDir = resolve(ROOT, "apps/manual-lab");
+export const labDir = resolve(ROOT, "lab");
 export const outDir = resolve(labDir, "public/bundle");
 export const srcDir = resolve(ROOT, "packages/babylon-lite/src");
 

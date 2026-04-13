@@ -204,7 +204,7 @@ babylon-lite/
 │   │       ├── load-skybox.ts     # High-level skybox loader
 │   │       └── skybox-renderable.ts # Skybox → deferred Renderable builder
 │
-├── apps/manual-lab/               # Dev sandbox (Scenes 1–22)
+├── lab/               # Dev sandbox (Scenes 1–22)
 │   ├── index.html
 │   ├── src/lite/scene1.ts          # Scene 1: BoomBox PBR
 │   ├── src/lite/scene2.ts          # Scene 2: Sphere + DirectionalLight
@@ -1051,5 +1051,5 @@ For production builds, switch to `"./dist/index.js"`.
 | `src/loader-babylon/load-babylon.ts` | .babylon format parser | — |
 | `src/loader-skybox/load-skybox.ts` | High-level skybox loader | — |
 | `src/loader-skybox/skybox-renderable.ts` | Skybox → Renderable builder | — |
-| `apps/manual-lab/src/lite/scene1.ts` | Scene 1: BoomBox PBR | 44 |
-| `apps/manual-lab/src/lite/scene*.ts` | Scenes 1–22 (dev sandbox) | — |
+| `lab/src/lite/scene1.ts` | Scene 1: BoomBox PBR | 44 |
+| `lab/src/lite/scene*.ts` | Scenes 1–22 (dev sandbox) | — |

@@ -48,7 +48,7 @@
 - Textures are represented by the `Texture2D` type (returned by `loadTexture2D()` and `createSolidTexture2D()`).
 - Material property interfaces (e.g. `SheenProps.texture`, `ClearCoatProps`) accept `Texture2D`, not raw GPU objects.
 - Only internal modules (`_gpu`, pipeline builders, renderable builders) may touch GPU handles.
-- Scene setup code in `apps/manual-lab/src/` is the user-facing reference — it must read like a high-level API demo, never like a WebGPU tutorial.
+- Scene setup code in `lab/src/` is the user-facing reference — it must read like a high-level API demo, never like a WebGPU tutorial.
 
 ### 4c. Materials Own Shaders (Critical)
 
@@ -127,16 +127,16 @@ async function main(): Promise<void> {
 - **Scene 1**: `playground.babylonjs.com/full.html?webgpu=1#QCU8DJ#800` (BoomBox + default env)
 - **Before adding or fixing a scene, you MUST study existing scenes first:**
     1. **Read the BJS scene code** (`bjs-sceneN.ts`) to understand exactly which BJS APIs are used (e.g. `createDefaultEnvironment()`, `PBRMaterial`, `CubeTexture`, etc.).
-    2. **Find existing Lite scenes that use the same BJS features.** Search all `apps/manual-lab/src/lite/scene*.ts` files for similar patterns (DDS skybox, environment loading, material types, camera setup, etc.).
+    2. **Find existing Lite scenes that use the same BJS features.** Search all `lab/src/lite/scene*.ts` files for similar patterns (DDS skybox, environment loading, material types, camera setup, etc.).
     3. **Reuse their implementation patterns.** If scene14 already loads a DDS cube skybox, scene20 should use the same `buildDdsSkyboxRenderable` approach — not reinvent a flat-color approximation. If scene7 already handles animated glTF with `seekTime`, copy that pattern.
     4. **Use Spector.GPU captures** to compare BJS and Lite shader pipelines side-by-side. Never guess what a BJS shader does — extract and read the actual WGSL from the capture.
 - **When adding a new scene, you MUST:**
-    1. Create `apps/manual-lab/sceneN.html` + `apps/manual-lab/src/lite/sceneN.ts`
-    2. Add the entry to `apps/manual-lab/vite.config.ts` rollup inputs
+    1. Create `lab/sceneN.html` + `lab/src/lite/sceneN.ts`
+    2. Add the entry to `lab/vite.config.ts` rollup inputs
     3. Add a Playwright parity test in `tests/parity/sceneN-*.spec.ts`
     4. Add a reference screenshot to `reference/sceneN-*/babylon-ref-golden.png`
-    5. Copy the reference to `apps/manual-lab/public/thumbnails/sceneN.png`
-    6. Add a card to `apps/manual-lab/index.html` (the scene gallery)
+    5. Copy the reference to `lab/public/thumbnails/sceneN.png`
+    6. Add a card to `lab/index.html` (the scene gallery)
     7. Add a bundle-size ceiling test in `tests/bundle-size.test.ts`
     8. Add an entry to `scene-config.json` with `id`, `slug`, `name`, and `maxMad`
     9. **Never change a bundle-size ceiling without explicit user approval.** If a ceiling is exceeded, report the numbers and ask the user before raising the limit.
@@ -147,7 +147,7 @@ async function main(): Promise<void> {
 - **Golden reference:** `babylon-ref-golden.png` (every scene, no exceptions).
 - **Test actual output:** `test-actual.png` (written by the parity test).
 - **Live reference (optional):** `live-ref.png` (captured at test time from Babylon.js; falls back to golden if capture fails).
-- **Thumbnail:** Copy the golden to `apps/manual-lab/public/thumbnails/sceneN.png`.
+- **Thumbnail:** Copy the golden to `lab/public/thumbnails/sceneN.png`.
 - Parity specs define `REFERENCE_DIR = path.resolve(__dirname, '../../reference/sceneN-<slug>')` and resolve all images relative to it.
 
 ### 2b′. Scene Config — MAD Thresholds (Mandatory)

@@ -1,6 +1,6 @@
 /**
  * Build Bundle Scenes — builds each lab scene as a standalone, tree-shaken,
- * minified production bundle into apps/manual-lab/public/bundle/.
+ * minified production bundle into lab/public/bundle/.
  *
  * The "Bundle" tab in the lab gallery loads these pre-built files directly,
  * showing what a real consumer gets after tree-shaking + minification.

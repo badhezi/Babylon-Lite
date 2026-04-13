@@ -1,5 +1,5 @@
 # Module: Animation Parity Testing — Deterministic Frame Sync
-> Scope: `apps/manual-lab/`, `scripts/capture-golden.ts`, `tests/parity/`
+> Scope: `lab/`, `scripts/capture-golden.ts`, `tests/parity/`
 
 ## Purpose
 
@@ -156,10 +156,10 @@ For animated scenes it:
 
 | File | Role |
 |------|------|
-| `apps/manual-lab/babylon-ref-scene5.html` | BJS reference with frame sync |
-| `apps/manual-lab/babylon-ref-scene7.html` | BJS reference with frame sync |
-| `apps/manual-lab/src/lite/scene5.ts` | Lite scene with freeze support |
-| `apps/manual-lab/src/lite/scene7.ts` | Lite scene with freeze support |
+| `lab/babylon-ref-scene5.html` | BJS reference with frame sync |
+| `lab/babylon-ref-scene7.html` | BJS reference with frame sync |
+| `lab/src/lite/scene5.ts` | Lite scene with freeze support |
+| `lab/src/lite/scene7.ts` | Lite scene with freeze support |
 | `scripts/capture-golden.ts` | Golden-capture CLI |
 | `tests/parity/scene5-alien.spec.ts` | Animated parity test |
 | `tests/parity/scene7-chibirex.spec.ts` | Animated parity test |

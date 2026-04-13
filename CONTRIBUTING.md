@@ -12,7 +12,7 @@ Pick the next available scene number (e.g., `23`) and a descriptive slug:
 
 ### 2. Create the Lite Scene
 
-**`apps/manual-lab/sceneN.html`**
+**`lab/sceneN.html`**
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -32,7 +32,7 @@ Pick the next available scene number (e.g., `23`) and a descriptive slug:
 </html>
 ```
 
-**`apps/manual-lab/src/lite/sceneN.ts`**
+**`lab/src/lite/sceneN.ts`**
 ```typescript
 import { createEngine, createSceneContext, createDefaultCamera, attachControl } from "babylon-lite";
 
@@ -53,11 +53,11 @@ async function main(): Promise<void> {
 main().catch(console.error);
 ```
 
-> **Tip:** Study existing scenes in `apps/manual-lab/src/lite/` for patterns. If a similar feature already exists (e.g., DDS skybox in scene14, animation in scene7), reuse its approach.
+> **Tip:** Study existing scenes in `lab/src/lite/` for patterns. If a similar feature already exists (e.g., DDS skybox in scene14, animation in scene7), reuse its approach.
 
 ### 3. Create the Babylon.js Reference
 
-**`apps/manual-lab/babylon-ref-sceneN.html`**
+**`lab/babylon-ref-sceneN.html`**
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -76,11 +76,11 @@ main().catch(console.error);
 </html>
 ```
 
-**`apps/manual-lab/src/bjs/sceneN.ts`** — Implement the same scene using `@babylonjs/core` APIs. This is the pixel-perfect reference. Set `canvas.dataset.ready = "true"` once rendered.
+**`lab/src/bjs/sceneN.ts`** — Implement the same scene using `@babylonjs/core` APIs. This is the pixel-perfect reference. Set `canvas.dataset.ready = "true"` once rendered.
 
 ### 4. Vite Config (Auto-Detected)
 
-HTML files in `apps/manual-lab/` are **auto-detected** by `vite.config.ts` — no manual entry needed.
+HTML files in `lab/` are **auto-detected** by `vite.config.ts` — no manual entry needed.
 
 ### 5. Capture the Golden Reference
 
@@ -101,7 +101,7 @@ reference/sceneN-my-feature/babylon-ref-golden.png
 
 Also copy as thumbnail:
 ```
-apps/manual-lab/public/thumbnails/sceneN.png
+lab/public/thumbnails/sceneN.png
 ```
 
 ### 6. Add Scene Config
@@ -171,12 +171,12 @@ pnpm test
 
 ### Checklist
 
-- [ ] `apps/manual-lab/sceneN.html` created
-- [ ] `apps/manual-lab/src/lite/sceneN.ts` created
-- [ ] `apps/manual-lab/babylon-ref-sceneN.html` created
-- [ ] `apps/manual-lab/src/bjs/sceneN.ts` created
+- [ ] `lab/sceneN.html` created
+- [ ] `lab/src/lite/sceneN.ts` created
+- [ ] `lab/babylon-ref-sceneN.html` created
+- [ ] `lab/src/bjs/sceneN.ts` created
 - [ ] `reference/sceneN-slug/babylon-ref-golden.png` captured
-- [ ] `apps/manual-lab/public/thumbnails/sceneN.png` copied
+- [ ] `lab/public/thumbnails/sceneN.png` copied
 - [ ] `scene-config.json` entry added
 - [ ] `tests/parity/scenes/sceneN-slug.spec.ts` created
 - [ ] Parity test passes locally
@@ -188,7 +188,7 @@ pnpm test
 
 Plumbing tests validate engine internals (dispose, material-swap, etc.) using Playwright + WebGPU.
 
-1. Create a test page in `apps/manual-lab/` (HTML + TS)
+1. Create a test page in `lab/` (HTML + TS)
 2. Create the spec in `tests/plumbing/`
 3. Run: `npx playwright test tests/plumbing/my-test.spec.ts`
 

@@ -6,7 +6,7 @@
  * runtime.  Dynamic-import chunks that are never loaded (e.g. animation-group
  * for a static model) are correctly excluded.
  *
- * Requires pre-built bundles in apps/manual-lab/public/bundle/.
+ * Requires pre-built bundles in lab/public/bundle/.
  * The Playwright webServer config (playwright.config.ts) starts the dev server
  * automatically.
  *

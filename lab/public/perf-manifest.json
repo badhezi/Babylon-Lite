@@ -1,0 +1,530 @@
+{
+  "scene8": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.089,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.256,
+      "drawCalls": 2,
+      "memoryMB": 11.367
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.257,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.4,
+      "rafP99Ms": 0.6,
+      "frames": 300,
+      "initTime": 0.734,
+      "drawCalls": 2,
+      "memoryMB": 98.26
+    }
+  },
+  "scene1": {
+    "lite": {
+      "fps": 60.2,
+      "rafAvgMs": 0.068,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 301,
+      "initTime": 0.443,
+      "drawCalls": 3,
+      "memoryMB": 16.68
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.337,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.5,
+      "rafP99Ms": 0.6,
+      "frames": 300,
+      "initTime": 0.934,
+      "drawCalls": 3,
+      "memoryMB": 68.31
+    }
+  },
+  "scene2": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.09,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.093,
+      "drawCalls": 1,
+      "memoryMB": 4.891
+    },
+    "bjs": {
+      "fps": 60.2,
+      "rafAvgMs": 0.199,
+      "rafMedianMs": 0.2,
+      "rafP95Ms": 0.3,
+      "rafP99Ms": 0.4,
+      "frames": 301,
+      "initTime": 0.226,
+      "drawCalls": 1,
+      "memoryMB": 35.359
+    }
+  },
+  "scene3": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.111,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.113,
+      "drawCalls": 11,
+      "memoryMB": 5.249
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.321,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.4,
+      "rafP99Ms": 0.5,
+      "frames": 300,
+      "initTime": 0.474,
+      "drawCalls": 11,
+      "memoryMB": 36.145
+    }
+  },
+  "scene4": {
+    "lite": {
+      "fps": 60.2,
+      "rafAvgMs": 0.114,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.3,
+      "frames": 301,
+      "initTime": 0.122,
+      "drawCalls": 8,
+      "memoryMB": 7.381
+    },
+    "bjs": {
+      "fps": 60.2,
+      "rafAvgMs": 0.443,
+      "rafMedianMs": 0.4,
+      "rafP95Ms": 0.6,
+      "rafP99Ms": 0.8,
+      "frames": 301,
+      "initTime": 0.358,
+      "drawCalls": 8,
+      "memoryMB": 42.519
+    }
+  },
+  "scene5": {
+    "lite": {
+      "fps": 60.2,
+      "rafAvgMs": 0.158,
+      "rafMedianMs": 0.2,
+      "rafP95Ms": 0.3,
+      "rafP99Ms": 0.3,
+      "frames": 301,
+      "initTime": 0.348,
+      "drawCalls": 8,
+      "memoryMB": 8.147
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.321,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.5,
+      "rafP99Ms": 0.6,
+      "frames": 300,
+      "initTime": 0.384,
+      "drawCalls": 8,
+      "memoryMB": 76.939
+    }
+  },
+  "scene6": {
+    "lite": {
+      "fps": 60.2,
+      "rafAvgMs": 0.065,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.1,
+      "rafP99Ms": 0.2,
+      "frames": 301,
+      "initTime": 0.13,
+      "drawCalls": 3,
+      "memoryMB": 6.492
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.276,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.4,
+      "rafP99Ms": 0.5,
+      "frames": 300,
+      "initTime": 0.335,
+      "drawCalls": 3,
+      "memoryMB": 50.488
+    }
+  },
+  "scene7": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.154,
+      "rafMedianMs": 0.2,
+      "rafP95Ms": 0.3,
+      "rafP99Ms": 0.3,
+      "frames": 300,
+      "initTime": 0.334,
+      "drawCalls": 8,
+      "memoryMB": 6.946
+    },
+    "bjs": {
+      "fps": 60.2,
+      "rafAvgMs": 0.394,
+      "rafMedianMs": 0.4,
+      "rafP95Ms": 0.5,
+      "rafP99Ms": 0.6,
+      "frames": 301,
+      "initTime": 0.464,
+      "drawCalls": 7,
+      "memoryMB": 72.143
+    }
+  },
+  "scene9": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.08,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.583,
+      "drawCalls": 32,
+      "memoryMB": 23.534
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.645,
+      "rafMedianMs": 0.6,
+      "rafP95Ms": 0.9,
+      "rafP99Ms": 0.9,
+      "frames": 300,
+      "initTime": 1.186,
+      "drawCalls": 25,
+      "memoryMB": 111.497
+    }
+  },
+  "scene10": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.072,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.102,
+      "drawCalls": 1,
+      "memoryMB": 5.224
+    },
+    "bjs": {
+      "fps": 60.2,
+      "rafAvgMs": 0.286,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.4,
+      "rafP99Ms": 0.5,
+      "frames": 301,
+      "initTime": 0.323,
+      "drawCalls": 1,
+      "memoryMB": 37.843
+    }
+  },
+  "scene11": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.102,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.409,
+      "drawCalls": 1,
+      "memoryMB": 20.793
+    },
+    "bjs": {
+      "fps": 60.2,
+      "rafAvgMs": 0.358,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.6,
+      "rafP99Ms": 0.8,
+      "frames": 301,
+      "initTime": 0.569,
+      "drawCalls": 1,
+      "memoryMB": 80.549
+    }
+  },
+  "scene12": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.101,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.135,
+      "drawCalls": 3,
+      "memoryMB": 6.776
+    },
+    "bjs": {
+      "fps": 60.2,
+      "rafAvgMs": 0.35,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.6,
+      "rafP99Ms": 0.7,
+      "frames": 301,
+      "initTime": 0.309,
+      "drawCalls": 3,
+      "memoryMB": 65.299
+    }
+  },
+  "scene13": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.086,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.141,
+      "drawCalls": 13,
+      "memoryMB": 11.164
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.393,
+      "rafMedianMs": 0.4,
+      "rafP95Ms": 0.6,
+      "rafP99Ms": 0.7,
+      "frames": 300,
+      "initTime": 0.387,
+      "drawCalls": 13,
+      "memoryMB": 61.742
+    }
+  },
+  "scene14": {
+    "lite": {
+      "fps": 60.2,
+      "rafAvgMs": 0.12,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.3,
+      "frames": 301,
+      "initTime": 1.422,
+      "drawCalls": 14,
+      "memoryMB": 59.792
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.325,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.5,
+      "rafP99Ms": 0.5,
+      "frames": 300,
+      "initTime": 1.692,
+      "drawCalls": 14,
+      "memoryMB": 121.335
+    }
+  },
+  "scene15": {
+    "lite": {
+      "fps": 60.2,
+      "rafAvgMs": 0.098,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 301,
+      "initTime": 0.091,
+      "drawCalls": 1,
+      "memoryMB": 4.852
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.213,
+      "rafMedianMs": 0.2,
+      "rafP95Ms": 0.3,
+      "rafP99Ms": 0.5,
+      "frames": 300,
+      "initTime": 0.222,
+      "drawCalls": 1,
+      "memoryMB": 35.833
+    }
+  },
+  "scene16": {
+    "lite": {
+      "fps": 60.2,
+      "rafAvgMs": 0.073,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 301,
+      "initTime": 0.094,
+      "drawCalls": 1,
+      "memoryMB": 10.088
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.237,
+      "rafMedianMs": 0.2,
+      "rafP95Ms": 0.4,
+      "rafP99Ms": 0.5,
+      "frames": 300,
+      "initTime": 0.236,
+      "drawCalls": 1,
+      "memoryMB": 39.572
+    }
+  },
+  "scene17": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.112,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.131,
+      "drawCalls": 3,
+      "memoryMB": 6.968
+    },
+    "bjs": {
+      "fps": 60.2,
+      "rafAvgMs": 0.324,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.5,
+      "rafP99Ms": 0.6,
+      "frames": 301,
+      "initTime": 0.333,
+      "drawCalls": 3,
+      "memoryMB": 40.74
+    }
+  },
+  "scene18": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.111,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.111,
+      "drawCalls": 3,
+      "memoryMB": 5.852
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.38,
+      "rafMedianMs": 0.4,
+      "rafP95Ms": 0.6,
+      "rafP99Ms": 0.6,
+      "frames": 300,
+      "initTime": 0.323,
+      "drawCalls": 3,
+      "memoryMB": 38.652
+    }
+  },
+  "scene19": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.074,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 300,
+      "initTime": 0.122,
+      "drawCalls": 1,
+      "memoryMB": 6.567
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.337,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.5,
+      "rafP99Ms": 0.6,
+      "frames": 300,
+      "initTime": 0.355,
+      "drawCalls": 1,
+      "memoryMB": 41.524
+    }
+  },
+  "scene20": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 2.963,
+      "rafMedianMs": 2.9,
+      "rafP95Ms": 3.7,
+      "rafP99Ms": 4.8,
+      "frames": 300,
+      "initTime": 0.487,
+      "drawCalls": 2502,
+      "memoryMB": 310.546
+    },
+    "bjs": {
+      "fps": 60.2,
+      "rafAvgMs": 5.544,
+      "rafMedianMs": 5,
+      "rafP95Ms": 8.3,
+      "rafP99Ms": 8.9,
+      "frames": 301,
+      "initTime": 1.543,
+      "drawCalls": 2502,
+      "memoryMB": 785.729
+    }
+  },
+  "scene21": {
+    "lite": {
+      "fps": 60.2,
+      "rafAvgMs": 0.109,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.2,
+      "frames": 301,
+      "initTime": 0.154,
+      "drawCalls": 2,
+      "memoryMB": 17.566
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.27,
+      "rafMedianMs": 0.3,
+      "rafP95Ms": 0.4,
+      "rafP99Ms": 0.5,
+      "frames": 300,
+      "initTime": 0.386,
+      "drawCalls": 2,
+      "memoryMB": 67.797
+    }
+  },
+  "scene22": {
+    "lite": {
+      "fps": 60,
+      "rafAvgMs": 0.119,
+      "rafMedianMs": 0.1,
+      "rafP95Ms": 0.2,
+      "rafP99Ms": 0.3,
+      "frames": 300,
+      "initTime": 0.122,
+      "drawCalls": 8,
+      "memoryMB": 7.528
+    },
+    "bjs": {
+      "fps": 60,
+      "rafAvgMs": 0.395,
+      "rafMedianMs": 0.4,
+      "rafP95Ms": 0.6,
+      "rafP99Ms": 0.7,
+      "frames": 300,
+      "initTime": 0.35,
+      "drawCalls": 8,
+      "memoryMB": 49.875
+    }
+  }
+}

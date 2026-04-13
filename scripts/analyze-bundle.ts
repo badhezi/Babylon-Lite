@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const labDir = resolve(ROOT, 'apps/manual-lab');
+const labDir = resolve(ROOT, 'lab');
 
 const scene = process.argv[2] || process.env.BUNDLE_SCENES || 'scene7';
 
@@ -132,7 +132,7 @@ async function main(): Promise<void> {
             const shortPath = m.id
                 .replace(/.*packages\/babylon-lite\/src\//, 'src/')
                 .replace(/.*node_modules\//, 'nm:')
-                .replace(/.*apps\/manual-lab\//, 'lab/');
+                .replace(/.*lab\//, 'lab/');
             console.log(`  ${String(m.size).padStart(6)} B  ${String(m.gzip).padStart(5)} gz  ${shortPath}`);
         }
         if (modules.length > 40) {

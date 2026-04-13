@@ -5,7 +5,7 @@ import { join, extname, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const labDir = resolve(__dirname, '..', 'apps/manual-lab');
+const labDir = resolve(__dirname, '..', 'lab');
 const publicDir = join(labDir, 'public');
 
 const MIME: Record<string, string> = {

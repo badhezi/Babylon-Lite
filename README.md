@@ -43,7 +43,7 @@ Open **http://localhost:5174** to browse the scene gallery.
 
 ```
 packages/babylon-lite/   # The engine library
-apps/manual-lab/         # Scene gallery & dev playground (Vite)
+lab/         # Scene gallery & dev playground (Vite)
 tests/unit/              # Vitest unit tests (pure Node.js, no GPU)
 tests/plumbing/          # Playwright GPU integration tests (dispose, material-swap)
 tests/parity/scenes/     # Playwright visual parity tests (pixel-diff)
@@ -79,8 +79,8 @@ For pure logic tests (shaders, math, composition) that don't need a browser or G
 
 For GPU integration tests (dispose, material-swap, lifecycle):
 
-1. Create a test page: `apps/manual-lab/my-test.html` + `apps/manual-lab/src/my-test.ts`
-2. Add the HTML entry to `apps/manual-lab/vite.config.ts` (auto-detected if in root)
+1. Create a test page: `lab/my-test.html` + `lab/src/my-test.ts`
+2. Add the HTML entry to `lab/vite.config.ts` (auto-detected if in root)
 3. Create `tests/plumbing/my-test.spec.ts`
 4. Run: `npx playwright test tests/plumbing/my-test.spec.ts`
 
@@ -90,11 +90,11 @@ For GPU integration tests (dispose, material-swap, lifecycle):
 
 For pixel-diff visual regression tests against Babylon.js golden references:
 
-1. Create the Lite scene: `apps/manual-lab/sceneN.html` + `apps/manual-lab/src/lite/sceneN.ts`
-2. Create the BJS reference: `apps/manual-lab/babylon-ref-sceneN.html` + `apps/manual-lab/src/bjs/sceneN.ts`
-3. Add entries to `apps/manual-lab/vite.config.ts` rollup inputs
+1. Create the Lite scene: `lab/sceneN.html` + `lab/src/lite/sceneN.ts`
+2. Create the BJS reference: `lab/babylon-ref-sceneN.html` + `lab/src/bjs/sceneN.ts`
+3. Add entries to `lab/vite.config.ts` rollup inputs
 4. Capture a golden reference and save to `reference/sceneN-<slug>/babylon-ref-golden.png`
-5. Copy golden to `apps/manual-lab/public/thumbnails/sceneN.png`
+5. Copy golden to `lab/public/thumbnails/sceneN.png`
 6. Add scene config to `scene-config.json` with `id`, `slug`, `name`, `maxMad`
 7. Create `tests/parity/scenes/sceneN-<slug>.spec.ts` using `compare-utils.ts` helpers
 8. Add a bundle-size ceiling in `tests/parity/bundle-size.spec.ts` (never raise without approval)
