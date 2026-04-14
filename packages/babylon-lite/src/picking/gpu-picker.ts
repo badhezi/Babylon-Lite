@@ -26,6 +26,7 @@ interface PickRenderTargets {
     depthView: GPUTextureView;
     colorStaging: GPUBuffer;
     depthStaging: GPUBuffer;
+    depthBytesPerRow: number;
     width: number;
     height: number;
 }
@@ -63,9 +64,11 @@ function ensureTargets(device: GPUDevice, picker: GpuPicker, w: number, h: numbe
         size: 256,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
     });
+    // depth32float requires copying the entire subresource — allocate full-size staging
+    const depthBytesPerRow = Math.ceil((w * 4) / 256) * 256;
     const depthStaging = device.createBuffer({
         label: "pick-depth-staging",
-        size: 256,
+        size: depthBytesPerRow * h,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
     });
     picker._targets = {
@@ -75,6 +78,7 @@ function ensureTargets(device: GPUDevice, picker: GpuPicker, w: number, h: numbe
         depthView: depthTexture.createView(),
         colorStaging,
         depthStaging,
+        depthBytesPerRow,
         width: w,
         height: h,
     };
@@ -237,13 +241,16 @@ export async function pickAsync(picker: GpuPicker, x: number, y: number): Promis
 
     pass.end();
 
-    // ── Readback 1 pixel ─────────────────────────────────
+    // ── Readback ──────────────────────────────────────────
+    // Color: copy single pixel (rgba8unorm allows partial copies)
     encoder.copyTextureToBuffer({ texture: rt.colorTexture, origin: { x: px, y: py } }, { buffer: rt.colorStaging, bytesPerRow: 256 }, { width: 1, height: 1 });
-    encoder.copyTextureToBuffer({ texture: rt.depthTexture, origin: { x: px, y: py } }, { buffer: rt.depthStaging, bytesPerRow: 256 }, { width: 1, height: 1 });
+    // Depth: depth32float requires full-subresource copy
+    encoder.copyTextureToBuffer({ texture: rt.depthTexture }, { buffer: rt.depthStaging, bytesPerRow: rt.depthBytesPerRow }, { width: rt.width, height: rt.height });
 
     device.queue.submit([encoder.finish()]);
 
     // ── Map and decode ───────────────────────────────────
+    await device.queue.onSubmittedWorkDone();
     await Promise.all([rt.colorStaging.mapAsync(GPUMapMode.READ), rt.depthStaging.mapAsync(GPUMapMode.READ)]);
 
     const colorData = new Uint8Array(rt.colorStaging.getMappedRange());
@@ -252,8 +259,10 @@ export async function pickAsync(picker: GpuPicker, x: number, y: number): Promis
     const b = colorData[2]!;
     const pickId = (r << 16) | (g << 8) | b;
 
-    const depthData = new Float32Array(rt.depthStaging.getMappedRange());
-    const depth = depthData[0]!;
+    // Read depth at (px, py) from full-size staging buffer
+    const depthMapped = new Float32Array(rt.depthStaging.getMappedRange());
+    const depthIdx = py * (rt.depthBytesPerRow / 4) + px;
+    const depth = depthMapped[depthIdx]!;
 
     rt.colorStaging.unmap();
     rt.depthStaging.unmap();
