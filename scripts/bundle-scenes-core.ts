@@ -361,9 +361,27 @@ export async function buildBundleScenes(): Promise<void> {
         rmSync(sceneOutDir, { recursive: true, force: true });
     }
 
+    // Load existing manifest to check for cached BJS sizes
+    const manifestPath = resolve(outDir, "manifest.json");
+    let existingManifest: Record<string, { rawKB: number; gzipKB: number; bjsRawKB?: number; bjsGzipKB?: number }> = {};
+    if (existsSync(manifestPath)) {
+        try {
+            existingManifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+        } catch {
+            /* start fresh */
+        }
+    }
+
+    // Only build BJS scenes whose sizes aren't already cached in the manifest
+    const bjsScenesToBuild = BJS_SCENES.filter((bjsScene) => {
+        const liteScene = bjsScene.replace("bjs-", "");
+        const cached = existingManifest[liteScene];
+        return cached?.bjsRawKB == null;
+    });
+
     // Build sequentially — parallel Vite build() calls within the same process
     // cause race conditions (0-byte chunk files, stale measurements on Windows).
-    const totalScenes = SCENES.length + BJS_SCENES.length;
+    const totalScenes = SCENES.length + bjsScenesToBuild.length;
     let built = 0;
     for (const scene of SCENES) {
         built++;
@@ -372,7 +390,10 @@ export async function buildBundleScenes(): Promise<void> {
         await buildScene(scene);
         console.log(`[${built}/${totalScenes}] ✓ ${scene} (${elapsed(tScene)}, total ${elapsed(t0)})`);
     }
-    for (const scene of BJS_SCENES) {
+    if (bjsScenesToBuild.length < BJS_SCENES.length) {
+        console.log(`  Skipping ${BJS_SCENES.length - bjsScenesToBuild.length} BJS scenes (sizes cached in manifest)`);
+    }
+    for (const scene of bjsScenesToBuild) {
         built++;
         const tScene = performance.now();
         console.log(`[${built}/${totalScenes}] Building ${scene}...`);
@@ -438,10 +459,14 @@ async function measureLiveSizes(): Promise<Record<string, { rawKB: number; gzipK
             console.log(`  measured ${scene}: ${rawKB} KB raw, ${gzipKB} KB gzip (${elapsed(tPage)})`);
         }
 
-        // Measure BJS scenes and merge into manifest (write after each)
+        // Measure BJS scenes — skip if sizes already cached in manifest
         for (const bjsScene of BJS_SCENES) {
-            const tPage = performance.now();
             const liteScene = bjsScene.replace("bjs-", "");
+            if (manifest[liteScene]?.bjsRawKB != null) {
+                console.log(`  ${bjsScene}: ${manifest[liteScene]!.bjsRawKB} KB raw, ${manifest[liteScene]!.bjsGzipKB} KB gzip (cached)`);
+                continue;
+            }
+            const tPage = performance.now();
             const { rawKB, gzipKB } = await measurePage(browser, port, `bundle-${bjsScene}.html`, "/bundle/");
             if (manifest[liteScene]) {
                 manifest[liteScene].bjsRawKB = rawKB;
