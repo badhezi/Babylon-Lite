@@ -26,7 +26,7 @@ export function loadCubeTexture(device: GPUDevice, baseUrl: string, ext = ".jpg"
                 if (!r.ok) {
                     throw new Error(`Cube face load failed: ${baseUrl}${s}${ext}`);
                 }
-                return createImageBitmap(await r.blob(), { colorSpaceConversion: "none" });
+                return createImageBitmap(await r.blob(), { premultiplyAlpha: "none", colorSpaceConversion: "none" });
             })
         );
         const sz = bitmaps[0]!.width;
@@ -38,7 +38,7 @@ export function loadCubeTexture(device: GPUDevice, baseUrl: string, ext = ".jpg"
             mipLevelCount: mipLevelCount(sz, sz),
         });
         for (let i = 0; i < 6; i++) {
-            device.queue.copyExternalImageToTexture({ source: bitmaps[i]! }, { texture: tex, origin: [0, 0, i] }, [sz, sz, 1]);
+            device.queue.copyExternalImageToTexture({ source: bitmaps[i]! }, { texture: tex, origin: [0, 0, i], premultipliedAlpha: false }, [sz, sz, 1]);
             bitmaps[i]!.close();
             generateMipmaps(device, tex, i);
         }

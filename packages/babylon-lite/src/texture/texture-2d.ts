@@ -80,7 +80,7 @@ async function loadTexture2DImpl(device: GPUDevice, url: string, opts: Texture2D
 
     const response = await fetch(url);
     const blob = await response.blob();
-    const imageBitmap = await createImageBitmap(blob);
+    const imageBitmap = await createImageBitmap(blob, { premultiplyAlpha: "none", colorSpaceConversion: "none" });
 
     const width = imageBitmap.width;
     const height = imageBitmap.height;
@@ -93,7 +93,7 @@ async function loadTexture2DImpl(device: GPUDevice, url: string, opts: Texture2D
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
-    device.queue.copyExternalImageToTexture({ source: imageBitmap, flipY: invertY }, { texture }, { width, height });
+    device.queue.copyExternalImageToTexture({ source: imageBitmap, flipY: invertY }, { texture, premultipliedAlpha: false }, { width, height });
     imageBitmap.close();
 
     if (mipMaps && mipLevelCount > 1) {
