@@ -16,9 +16,10 @@ export interface SkyboxMaterial {
 export function createSkyboxMaterial(sceneBindGroupLayout: GPUBindGroupLayout): SkyboxMaterial {
     let pipeline: GPURenderPipeline | null = null;
     let layout: GPUBindGroupLayout | null = null;
+    let _cachedDevice: GPUDevice | null = null;
 
     function getLayout(device: GPUDevice): GPUBindGroupLayout {
-        if (layout) {
+        if (layout && _cachedDevice === device) {
             return layout;
         }
         layout = device.createBindGroupLayout({
@@ -30,9 +31,12 @@ export function createSkyboxMaterial(sceneBindGroupLayout: GPUBindGroupLayout): 
 
     return {
         getPipeline(device, format, msaaSamples) {
-            if (pipeline) {
+            if (pipeline && _cachedDevice === device) {
                 return pipeline;
             }
+            pipeline = null;
+            layout = null;
+            _cachedDevice = device;
             const vertModule = device.createShaderModule({ code: WGSL_SCENE_UNIFORMS_PBR + skyboxVertSrc, label: "skybox-vert" });
             const fragModule = device.createShaderModule({ code: WGSL_DITHER + skyboxFragSrc, label: "skybox-frag" });
             const SKYBOX_POS_BUFFER: GPUVertexBufferLayout[] = [{ arrayStride: 12, attributes: [{ shaderLocation: 0, offset: 0, format: "float32x3" as GPUVertexFormat }] }];
@@ -114,9 +118,10 @@ export interface CubemapSkyboxMaterial {
 export function createCubemapSkyboxMaterial(sceneBindGroupLayout: GPUBindGroupLayout, label: string, vertCode: string, fragCode: string): CubemapSkyboxMaterial {
     let pipeline: GPURenderPipeline | null = null;
     let layout: GPUBindGroupLayout | null = null;
+    let _cachedDevice: GPUDevice | null = null;
 
     function getLayout(device: GPUDevice): GPUBindGroupLayout {
-        if (layout) {
+        if (layout && _cachedDevice === device) {
             return layout;
         }
         layout = device.createBindGroupLayout({
@@ -132,9 +137,12 @@ export function createCubemapSkyboxMaterial(sceneBindGroupLayout: GPUBindGroupLa
 
     return {
         getPipeline(device, format, msaaSamples) {
-            if (pipeline) {
+            if (pipeline && _cachedDevice === device) {
                 return pipeline;
             }
+            pipeline = null;
+            layout = null;
+            _cachedDevice = device;
             const vertModule = device.createShaderModule({ code: vertCode, label: `${label}-vert` });
             const fragModule = device.createShaderModule({ code: fragCode, label: `${label}-frag` });
 

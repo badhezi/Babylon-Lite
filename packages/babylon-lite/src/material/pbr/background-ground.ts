@@ -78,9 +78,10 @@ interface GroundMaterial {
 function createGroundMaterial(sceneBindGroupLayout: GPUBindGroupLayout): GroundMaterial {
     let pipeline: GPURenderPipeline | null = null;
     let layout: GPUBindGroupLayout | null = null;
+    let _cachedDevice: GPUDevice | null = null;
 
     function getLayout(device: GPUDevice): GPUBindGroupLayout {
-        if (layout) {
+        if (layout && _cachedDevice === device) {
             return layout;
         }
         layout = device.createBindGroupLayout({
@@ -96,9 +97,12 @@ function createGroundMaterial(sceneBindGroupLayout: GPUBindGroupLayout): GroundM
 
     return {
         getPipeline(device, format, msaaSamples) {
-            if (pipeline) {
+            if (pipeline && _cachedDevice === device) {
                 return pipeline;
             }
+            pipeline = null;
+            layout = null;
+            _cachedDevice = device;
             const vertModule = device.createShaderModule({ code: WGSL_SCENE_UNIFORMS_PBR + groundVertSrc, label: "ground-vert" });
             const fragModule = device.createShaderModule({ code: WGSL_SCENE_UNIFORMS_PBR_SH + WGSL_IMAGE_PROCESSING + WGSL_DITHER + groundFragSrc, label: "ground-frag" });
 
