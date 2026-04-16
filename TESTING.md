@@ -94,6 +94,18 @@ pnpm build:bundle-scenes
 pnpm test:parity-cloud
 ```
 
+### Golden References
+
+Golden images are committed in `reference/` and compared against Lite renders.
+`captureGolden()` skips BJS page capture when the golden file already exists
+on disk, which significantly speeds up test runs.
+
+To force recapture of all golden references (e.g., after a Babylon.js update):
+
+```sh
+RECAPTURE_GOLDEN=true pnpm test:parity
+```
+
 ### Timeouts
 
 Canvas-ready timeouts are set per-scene based on model complexity:
@@ -265,8 +277,37 @@ Five parallel jobs:
 ### Optional Pipeline Variables
 
 - `PERF_REGRESSION_PCT` — override regression threshold
-- `PERF_DURATION` — override perf test duration
+- `PERF_FRAMES` — override measured frames per run
+- `PERF_RUNS` — override number of runs per version
+- `PERF_WARMUP` — override warmup frames per run
 - `BUNDLE_DELTA_PCT` — override bundle delta threshold
+
+### Test Reporting
+
+Both cloud test suites (perf and parity) produce:
+
+- **JUnit XML** — consumed by Azure DevOps `PublishTestResults@2` and
+  displayed in the pipeline's **Tests** tab with pass/fail counts, durations,
+  and error messages
+- **HTML report** — interactive Playwright report with error details,
+  screenshots, and traces
+
+Report locations after a run:
+
+| Suite  | JUnit XML                        | HTML Report                            |
+| ------ | -------------------------------- | -------------------------------------- |
+| Parity | `test-results/parity-junit.xml`  | `test-results/parity-report/index.html`|
+| Perf   | `test-results/perf-junit.xml`    | `test-results/perf-report/index.html`  |
+
+To view the HTML report locally:
+
+```sh
+npx playwright show-report test-results/parity-report
+npx playwright show-report test-results/perf-report
+```
+
+In CI, test artifacts (including the HTML report) are uploaded as pipeline
+artifacts on every run and can be downloaded from the build summary.
 
 ---
 
@@ -290,3 +331,19 @@ entry specifies:
 - `maxMad` — parity MAD threshold (whole image)
 - `maxRegionMad` — parity MAD threshold (focus region, if defined)
 - `maxRawKB` / `maxGzipKB` — bundle size ceilings
+
+---
+
+## Environment Variables Reference
+
+| Variable | Scope | Default | Description |
+| ---------------------- | ------ | ------- | -------------------------------------------------- |
+| `PERF_REGRESSION_PCT` | Perf | `5` | Max allowed regression % |
+| `PERF_FRAMES` | Perf | `300` | Measured frames per run |
+| `PERF_RUNS` | Perf | `5` | Runs per version (takes median) |
+| `PERF_WARMUP` | Perf | `60` | Warmup frames before each run |
+| `PERF_SCENES` | Perf | all | Comma-separated scene IDs |
+| `BUNDLE_DELTA_PCT` | Bundle | — | Max allowed bundle size growth % |
+| `RECAPTURE_GOLDEN` | Parity | — | Set to `true` to force golden recapture |
+| `BROWSERSTACK_USERNAME`| Cloud | — | BrowserStack credentials |
+| `BROWSERSTACK_ACCESS_KEY`| Cloud | — | BrowserStack credentials |
