@@ -51,6 +51,7 @@ async function main(): Promise<void> {
     const dragonMaterial = createPbrMaterial({
         baseColorTexture: baseColorTex,
         ormTexture: ormTex,
+        enableSpecularAA: true,
         subsurface: {
             translucency: {
                 intensity: 1.0,
@@ -72,11 +73,11 @@ async function main(): Promise<void> {
     }
 
     // Tiny emissive sphere (BJS scene has this for the orbiting point light — affects auto-framing bounds)
-    const lightSphere = createSphere(engine, { segments: 4, diameter: 0.005 });
+    const lightSphere = createSphere(engine, { segments: 32, diameter: 0.005 });
     lightSphere.boundMin = [0, 0.02 - 0.0025, -0.2 - 0.0025];
     lightSphere.boundMax = [0, 0.02 + 0.0025, -0.2 + 0.0025];
     lightSphere.material = createPbrMaterial({
-        baseColorTexture: createSolidTexture2D(engine, 0, 0, 0),
+        baseColorTexture: createSolidTexture2D(engine, 1, 1, 1),
         ormTexture: createSolidTexture2D(engine, 1.0, 1.0, 0.0),
         emissiveColor: [1, 1, 1],
     });

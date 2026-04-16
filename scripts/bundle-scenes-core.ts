@@ -212,7 +212,89 @@ const ROOT = resolve(__dirname, "..");
 
 export const labDir = resolve(ROOT, "lab");
 export const outDir = resolve(labDir, "public/bundle");
+export const bundleInfoDir = resolve(outDir, "bundle-info");
 export const srcDir = resolve(ROOT, "packages/babylon-lite/src");
+
+/**
+ * Normalize an absolute module id to a compact, repo-relative display path.
+ * - Paths inside the repo are made relative to the repo root.
+ * - Paths inside pnpm's `.pnpm/<pkg>@ver/node_modules/<pkg>/...` are collapsed
+ *   to `node_modules/<pkg>/...`.
+ * - Windows backslashes are normalized to forward slashes.
+ * - Virtual ids (starting with `\0`) and query suffixes (e.g. `?raw`) are preserved.
+ */
+function normalizeModuleId(id: string): string {
+    let out = id.replace(/\\/g, "/");
+    // Split query suffix (e.g. "?raw") so we don't interfere with path logic.
+    const qIdx = out.indexOf("?");
+    const query = qIdx >= 0 ? out.slice(qIdx) : "";
+    if (qIdx >= 0) out = out.slice(0, qIdx);
+
+    // Virtual modules (Rollup convention) — keep as-is.
+    if (out.startsWith("\u0000")) return out + query;
+
+    const rootFwd = ROOT.replace(/\\/g, "/") + "/";
+    if (out.startsWith(rootFwd)) out = out.slice(rootFwd.length);
+
+    // Collapse pnpm virtual store paths.
+    const pnpmMatch = out.match(/(^|\/)node_modules\/\.pnpm\/[^/]+\/node_modules\/(.*)$/);
+    if (pnpmMatch) out = "node_modules/" + pnpmMatch[2];
+
+    return out + query;
+}
+
+interface BundleInfoModule {
+    id: string;
+    bytes: number;
+}
+interface BundleInfoChunk {
+    file: string;
+    bytes: number;
+    isEntry: boolean;
+    modules: BundleInfoModule[];
+}
+
+/**
+ * Write per-scene chunk/module contribution info alongside the bundle output.
+ * Consumed by the lab "Bundle" tab to show which .ts files contribute to each
+ * chunk (with rendered sizes).
+ */
+function writeBundleInfo(scene: string, result: unknown): void {
+    // Vite build() returns RollupOutput | RollupOutput[] (one per output format).
+    // We configure a single ES output, so take the first.
+    const output = Array.isArray(result) ? result[0] : result;
+    const items = (output as { output?: unknown[] } | undefined)?.output;
+    if (!Array.isArray(items)) return;
+
+    const chunks: BundleInfoChunk[] = [];
+    for (const item of items) {
+        const it = item as {
+            type?: string;
+            fileName?: string;
+            code?: string;
+            isEntry?: boolean;
+            modules?: Record<string, { renderedLength?: number }>;
+        };
+        if (it.type !== "chunk" || !it.fileName) continue;
+        const modules: BundleInfoModule[] = [];
+        for (const [rawId, m] of Object.entries(it.modules ?? {})) {
+            const bytes = m.renderedLength ?? 0;
+            if (bytes <= 0) continue;
+            modules.push({ id: normalizeModuleId(rawId), bytes });
+        }
+        modules.sort((a, b) => b.bytes - a.bytes);
+        chunks.push({
+            file: it.fileName,
+            bytes: Buffer.byteLength(it.code ?? "", "utf8"),
+            isEntry: !!it.isEntry,
+            modules,
+        });
+    }
+    chunks.sort((a, b) => Number(b.isEntry) - Number(a.isEntry) || b.bytes - a.bytes);
+
+    mkdirSync(bundleInfoDir, { recursive: true });
+    writeFileSync(resolve(bundleInfoDir, `${scene}.json`), JSON.stringify({ scene, chunks }, null, 2));
+}
 
 const sceneConfig: { id: number }[] = JSON.parse(readFileSync(resolve(ROOT, "scene-config.json"), "utf-8"));
 const ALL_SCENES = sceneConfig.map((s) => `scene${s.id}`);
@@ -300,7 +382,7 @@ export async function buildBundleScenes(): Promise<void> {
         const sceneOutDir = resolve(outDir, scene);
         const isBjs = scene.startsWith("bjs-");
 
-        await build({
+        const buildResult = await build({
             root: labDir,
             configFile: false,
             publicDir: false,
@@ -340,6 +422,10 @@ export async function buildBundleScenes(): Promise<void> {
             },
         });
 
+        // Extract per-chunk module contribution info from the Rollup output so the
+        // lab UI can show which .ts files ended up in each chunk (with rendered sizes).
+        writeBundleInfo(scene, buildResult);
+
         // Atomically replace this scene's files in outDir:
         // 1. Write all new files (overwriting existing ones).
         // 2. Remove any stale old chunk files that didn't appear in the new build.
@@ -363,7 +449,7 @@ export async function buildBundleScenes(): Promise<void> {
 
     // Load existing manifest to check for cached BJS sizes
     const manifestPath = resolve(outDir, "manifest.json");
-    let existingManifest: Record<string, { rawKB: number; gzipKB: number; bjsRawKB?: number; bjsGzipKB?: number }> = {};
+    let existingManifest: Record<string, { rawKB: number; gzipKB: number; bjsRawKB?: number; bjsGzipKB?: number; runtimeChunks?: string[] }> = {};
     if (existsSync(manifestPath)) {
         try {
             existingManifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
@@ -430,13 +516,13 @@ export async function buildBundleScenes(): Promise<void> {
  * bundle-sceneN.html, and measure only the /bundle/*.js bytes that are
  * actually fetched at runtime.
  */
-async function measureLiveSizes(): Promise<Record<string, { rawKB: number; gzipKB: number; bjsRawKB?: number; bjsGzipKB?: number }>> {
+async function measureLiveSizes(): Promise<Record<string, { rawKB: number; gzipKB: number; bjsRawKB?: number; bjsGzipKB?: number; runtimeChunks?: string[] }>> {
     const { chromium } = await import("@playwright/test");
     const { server, port } = await startStaticServer(labDir);
     const manifestPath = resolve(outDir, "manifest.json");
 
     // Load existing manifest so we can update incrementally (UI can refresh mid-build)
-    let manifest: Record<string, { rawKB: number; gzipKB: number; bjsRawKB?: number; bjsGzipKB?: number }> = {};
+    let manifest: Record<string, { rawKB: number; gzipKB: number; bjsRawKB?: number; bjsGzipKB?: number; runtimeChunks?: string[] }> = {};
     if (existsSync(manifestPath)) {
         try {
             manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
@@ -458,8 +544,8 @@ async function measureLiveSizes(): Promise<Record<string, { rawKB: number; gzipK
         // Measure Lite scenes (write after each)
         for (const scene of SCENES) {
             const tPage = performance.now();
-            const { rawKB, gzipKB } = await measurePage(browser, port, `bundle-${scene}.html`, "/bundle/");
-            manifest[scene] = { ...manifest[scene], rawKB, gzipKB };
+            const { rawKB, gzipKB, chunks } = await measurePage(browser, port, `bundle-${scene}.html`, "/bundle/");
+            manifest[scene] = { ...manifest[scene], rawKB, gzipKB, runtimeChunks: chunks };
             flush();
             console.log(`  measured ${scene}: ${rawKB} KB raw, ${gzipKB} KB gzip (${elapsed(tPage)})`);
         }
@@ -489,15 +575,24 @@ async function measureLiveSizes(): Promise<Record<string, { rawKB: number; gzipK
     return manifest;
 }
 
-async function measurePage(browser: any, port: number, htmlFile: string, bundlePath: string): Promise<{ rawKB: number; gzipKB: number }> {
+async function measurePage(
+    browser: any,
+    port: number,
+    htmlFile: string,
+    bundlePath: string
+): Promise<{ rawKB: number; gzipKB: number; chunks: string[] }> {
     const page = await browser.newPage();
     const jsPayloads: Buffer[] = [];
+    const chunkFiles: string[] = [];
 
     page.on("response", async (resp: any) => {
         const url = resp.url();
         if (url.includes(bundlePath) && url.endsWith(".js") && resp.ok()) {
             try {
                 jsPayloads.push(await resp.body());
+                const idx = url.indexOf(bundlePath);
+                const fileName = url.slice(idx + bundlePath.length).split("?")[0];
+                chunkFiles.push(fileName);
             } catch {
                 /* page may close before body resolves */
             }
@@ -522,5 +617,6 @@ async function measurePage(browser: any, port: number, htmlFile: string, bundleP
     return {
         rawKB: Math.round((rawTotal / 1024) * 10) / 10,
         gzipKB: Math.round((gzipTotal / 1024) * 10) / 10,
+        chunks: Array.from(new Set(chunkFiles)).sort(),
     };
 }
