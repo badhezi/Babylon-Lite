@@ -3,7 +3,7 @@
 # Runs on every PR targeting master. Five parallel jobs:
 #   1. Unit Tests       — vitest + plumbing (Playwright)
 #   2. Bundle Size      — ceiling checks + delta vs baseline
-#   3. Perf Regression  — Lite vs BJS on same agent (no baseline needed)
+#   3. Perf Regression  — Lite vs Stable on BrowserStack
 #   4. Parity (Cloud)   — pixel-diff via cloud browser with real WebGPU
 #   5. Lint             — ESLint + TypeScript type-check
 #
@@ -69,7 +69,7 @@ stages:
                   condition: always()
                   inputs:
                       testResultsFormat: "JUnit"
-                      testResultsFiles: "**/test-results/**/*.xml"
+                      testResultsFiles: "**/test-results/unit-junit.xml"
                       mergeTestResults: true
                       testRunTitle: "Unit Tests"
                   continueOnError: true
@@ -131,7 +131,7 @@ stages:
           # Job 3: Performance Regression
           # ──────────────────────────────────────────────────────────────
           - job: PerfRegression
-            displayName: "Performance: Lite vs BJS"
+            displayName: "Performance: Lite vs Stable"
             pool:
                 vmImage: "ubuntu-latest"
             steps:
@@ -162,7 +162,7 @@ stages:
 
                 # Runs current vs baseline on same BrowserStack macOS Chrome instance
                 - script: pnpm test:perf-cloud
-                  displayName: "Run perf regression tests (current vs baseline)"
+                  displayName: "Run perf regression tests (current vs stable)"
                   env:
                       HEADLESS: "true"
                       PERF_REGRESSION_PCT: "$(PERF_REGRESSION_PCT)"

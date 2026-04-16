@@ -1,5 +1,5 @@
 /**
- * Performance Regression Test — Current Lite vs Previous Release
+ * Performance Regression Test — Current Lite vs Stable
  *
  * Measures CPU + GPU frame time by intercepting the engine's RAF-based
  * render loop at runtime. No scene modifications required — hooks are
@@ -201,7 +201,7 @@ async function measurePage(context: BrowserContext, url: string, runs: number): 
 if (!hasBaseline) {
     test.skip("No baseline bundles — run `pnpm build:perf-baseline` first", () => {});
 } else {
-    test.describe("Performance: Current vs Previous Release", () => {
+    test.describe("Performance: Current vs Stable", () => {
         for (const scene of SCENES) {
             test(`${scene.name} — current ≤ ${REGRESSION_PCT}% slower than baseline`, async ({ browser }) => {
                 const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
