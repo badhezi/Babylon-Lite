@@ -41,8 +41,22 @@ function getBaselineRef(): string {
         // No tags found
     }
 
-    console.log("No release tags found, falling back to origin/master");
-    return "origin/master";
+    console.log("No release tags found, falling back to default branch");
+
+    // Try common remote branch names
+    for (const ref of ["origin/master", "origin/main"]) {
+        try {
+            run(`git rev-parse ${ref}`);
+            console.log(`Using fallback ref: ${ref}`);
+            return ref;
+        } catch {
+            // not available
+        }
+    }
+
+    // Last resort: previous commit
+    console.log("No remote branches found, using HEAD~1");
+    return "HEAD~1";
 }
 
 const baselineRef = getBaselineRef();
