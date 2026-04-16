@@ -149,9 +149,6 @@ stages:
                 - script: pnpm install --frozen-lockfile
                   displayName: "Install dependencies"
 
-                - script: pnpm exec playwright install chromium
-                  displayName: "Install Playwright browsers"
-
                 # Build current bundle scenes
                 - script: pnpm build:bundle-scenes
                   displayName: "Build current bundle scenes"
@@ -207,9 +204,6 @@ stages:
 
                 - script: pnpm install --frozen-lockfile
                   displayName: "Install dependencies"
-
-                - script: pnpm exec playwright install chromium
-                  displayName: "Install Playwright browsers"
 
                 - script: pnpm build:bundle-scenes
                   displayName: "Build bundle scenes"
