@@ -432,6 +432,11 @@ async function uploadMeshes(engine: EngineContextInternal, meshDatas: GltfMeshDa
             const emissiveTexture = mat.emissiveImage ? getCachedTexture(mat.emissiveImage, true) : undefined;
             const specGlossTexture = mat.specGlossImage ? getCachedTexture(mat.specGlossImage, true) : undefined;
             const ormTexture = await getOrmTexture(mat);
+            let layers: Partial<import("../material/pbr/pbr-material.js").PbrMaterialProps> | undefined;
+            if (mat.clearcoat || mat.sheen || mat.anisotropy) {
+                const mod = await import("./gltf-material-layers.js");
+                layers = mod.buildPbrLayers(mat);
+            }
 
             return {
                 baseColorTexture,
@@ -443,6 +448,7 @@ async function uploadMeshes(engine: EngineContextInternal, meshDatas: GltfMeshDa
                 occlusionStrength: mat.occlusionImage ? 1.0 : 0,
                 enableSpecularAA: true,
                 ...(mat.alphaMode === "BLEND" ? { alphaBlend: true, alpha: mat.baseColorFactor[3] } : undefined),
+                ...layers,
                 _buildGroup: pbrGroupBuilder,
             } satisfies PbrMaterialPropsInternal;
         })();

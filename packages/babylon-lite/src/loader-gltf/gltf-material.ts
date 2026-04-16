@@ -3,7 +3,7 @@
  * - Extracts material properties from glTF material definitions
  * - Resolves textures (baseColor, normal, ORM, emissive, specGloss)
  * - Handles alpha modes and double-sided flag
- * - Supports KHR_materials_pbrSpecularGlossiness extension
+ * - Supports KHR_materials_pbrSpecularGlossiness, _clearcoat, _sheen, _anisotropy extensions
  */
 import { resolveImage } from "./gltf-parser.js";
 
@@ -26,6 +26,12 @@ export interface GltfMaterialData {
     alphaMode: string;
     /** glTF alphaCutoff for MASK mode (default 0.5). */
     alphaCutoff: number;
+    /** Raw KHR_materials_clearcoat extension object (undefined when absent). */
+    clearcoat?: any;
+    /** Raw KHR_materials_sheen extension object (factor-only; texture not loaded). */
+    sheen?: any;
+    /** Raw KHR_materials_anisotropy extension object. */
+    anisotropy?: any;
 }
 
 /** Assemble a PBR material from a glTF material definition. */
@@ -56,7 +62,8 @@ export async function assembleMaterial(
     }
 
     const pbr = mat.pbrMetallicRoughness ?? {};
-    const specGlossExt = mat.extensions?.KHR_materials_pbrSpecularGlossiness;
+    const exts = mat.extensions;
+    const specGlossExt = exts?.KHR_materials_pbrSpecularGlossiness;
 
     const getTexImage = (texInfo: any): Promise<ImageBitmap | null> => {
         if (!texInfo) {
@@ -102,5 +109,12 @@ export async function assembleMaterial(
         doubleSided: !!mat.doubleSided,
         alphaMode: mat.alphaMode ?? "OPAQUE",
         alphaCutoff: mat.alphaCutoff ?? 0.5,
+        clearcoat: exts?.KHR_materials_clearcoat,
+        sheen: exts?.KHR_materials_sheen,
+        anisotropy: exts?.KHR_materials_anisotropy,
     };
 }
+
+/** Build optional PBR layer props (clearcoat / sheen / anisotropy) from parsed glTF
+ *  extension data. Returns a partial PbrMaterialProps to spread onto the built material.
+ *  Defined in gltf-material-layers.ts (dynamically imported when needed). */

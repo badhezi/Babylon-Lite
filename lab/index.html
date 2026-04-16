@@ -1263,7 +1263,7 @@
                     <div class="arch-modules">
                         <div class="arch-mod arch-mod-mat">
                             <div class="arch-mod-name">Materials</div>
-                            <div class="arch-mod-sub">PBR metallic-roughness · spec-gloss · Standard Blinn-Phong · background/ground</div>
+                            <div class="arch-mod-sub">PBR metallic-roughness · spec-gloss · clearcoat · sheen · anisotropy · subsurface · Standard Blinn-Phong · background/ground</div>
                         </div>
                         <div class="arch-mod arch-mod-mesh">
                             <div class="arch-mod-name">Meshes</div>
@@ -1271,7 +1271,7 @@
                         </div>
                         <div class="arch-mod arch-mod-loader">
                             <div class="arch-mod-name">Loaders</div>
-                            <div class="arch-mod-sub">glTF / GLB · .babylon · .env · .hdr panorama · cube skybox</div>
+                            <div class="arch-mod-sub">glTF / GLB · .babylon · .env · .hdr panorama · cube skybox · KTX1 · KHR_materials_variants</div>
                         </div>
                         <div class="arch-mod arch-mod-anim">
                             <div class="arch-mod-name">Animation</div>
@@ -1285,7 +1285,7 @@
                         </div>
                         <div class="arch-mod arch-mod-tex">
                             <div class="arch-mod-name">Textures</div>
-                            <div class="arch-mod-sub">2D · cube · solid color · GPU mipmap gen · sRGB · sampler config</div>
+                            <div class="arch-mod-sub">2D · cube · solid color · KTX1 compressed · GPU mipmap gen · sRGB · sampler config</div>
                         </div>
                         <div class="arch-mod arch-mod-math">
                             <div class="arch-mod-name">Math</div>
@@ -1593,9 +1593,15 @@
                         </tr>
                         <tr>
                             <td>PBR Subsurface / Translucency</td>
-                            <td>—</td>
                             <td>✅</td>
-                            <td></td>
+                            <td>✅</td>
+                            <td>Scene 26 — thickness map, translucency, tint</td>
+                        </tr>
+                        <tr>
+                            <td>Material Variants (KHR_materials_variants)</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>Scene 27 — runtime variant selection</td>
                         </tr>
                         <tr>
                             <td>PBR Iridescence</td>
@@ -1671,8 +1677,7 @@
                             <td>Free Camera</td>
                             <td>✅</td>
                             <td>✅</td>
-                            <td>Scene 18</td>
-                            <td></td>
+                            <td>Scene 18, 24, 25 — WASD/arrow controls</td>
                         </tr>
                         <tr>
                             <td>Follow Camera</td>
@@ -2072,22 +2077,201 @@
                             <td></td>
                         </tr>
                         <tr>
-                            <td>glTF Extensions (KHR_*)</td>
-                            <td>⚡</td>
+                            <td>KTX1 Compressed Textures</td>
                             <td>✅</td>
-                            <td>Spec-gloss supported; others pending</td>
-                        </tr>
-                        <tr>
-                            <td>Draco Compression</td>
-                            <td>—</td>
                             <td>✅</td>
-                            <td></td>
+                            <td>Scene 25 — ASTC / BC / ETC2 auto-format + PNG fallback</td>
                         </tr>
                         <tr>
                             <td>KTX2 Textures</td>
                             <td>—</td>
                             <td>✅</td>
                             <td></td>
+                        </tr>
+
+                        <!-- glTF 2.0 Extensions -->
+                        <tr class="feat-cat">
+                            <td colspan="4">glTF 2.0 Extensions (Khronos + vendor)</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_pbrSpecularGlossiness</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>Archived ext — mapped to metallic-roughness (Scene 6)</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_variants</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>Scene 27 — runtime variant selection</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_unlit</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>disableLighting on standard material planned</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_clearcoat</td>
+                            <td>⚡</td>
+                            <td>✅</td>
+                            <td>Shader supports clearcoat (Scene 19); glTF loader wiring pending</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_sheen</td>
+                            <td>⚡</td>
+                            <td>✅</td>
+                            <td>Shader supports sheen (Scene 21); glTF loader wiring pending</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_anisotropy</td>
+                            <td>⚡</td>
+                            <td>✅</td>
+                            <td>Shader supports anisotropy (Scene 23); glTF loader wiring pending</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_volume</td>
+                            <td>⚡</td>
+                            <td>✅</td>
+                            <td>Shader supports subsurface thickness (Scene 26); glTF loader wiring pending</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_transmission</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Refraction through thin surfaces</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_ior</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Index of refraction override</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_specular</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Dielectric specular intensity/color</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_iridescence</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Thin-film interference</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_emissive_strength</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>HDR emissive multiplier</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_materials_dispersion</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Wavelength-dependent refraction</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_lights_punctual</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Point / spot / directional lights from glTF</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_texture_transform</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>UV offset / scale / rotate per texture</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_texture_basisu</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>KTX2 + Basis Universal supercompression</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_draco_mesh_compression</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Draco-compressed mesh geometry</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_mesh_quantization</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>8/16-bit quantized vertex attributes</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_animation_pointer</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Animate arbitrary JSON pointers</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_audio / KHR_audio_emitter</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Positional / ambient audio</td>
+                        </tr>
+                        <tr>
+                            <td>KHR_xmp_json_ld</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>XMP metadata</td>
+                        </tr>
+                        <tr>
+                            <td>EXT_mesh_gpu_instancing</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Per-node instance transforms</td>
+                        </tr>
+                        <tr>
+                            <td>EXT_meshopt_compression</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>meshoptimizer bitstream compression</td>
+                        </tr>
+                        <tr>
+                            <td>EXT_texture_webp</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>WebP texture source</td>
+                        </tr>
+                        <tr>
+                            <td>EXT_texture_avif</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>AVIF texture source</td>
+                        </tr>
+                        <tr>
+                            <td>EXT_lights_image_based</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>IBL specified in glTF asset</td>
+                        </tr>
+                        <tr>
+                            <td>MSFT_lod</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Discrete level-of-detail</td>
+                        </tr>
+                        <tr>
+                            <td>MSFT_minecraftMesh</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Minecraft-style voxel meshes</td>
+                        </tr>
+                        <tr>
+                            <td>MSFT_audio_emitter</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Legacy positional audio</td>
+                        </tr>
+                        <tr>
+                            <td>ExtrasAsMetadata</td>
+                            <td>—</td>
+                            <td>✅</td>
+                            <td>Promote glTF `extras` to runtime metadata</td>
                         </tr>
 
                         <!-- Textures -->
@@ -2323,8 +2507,7 @@
                             <td>Ray Casting / Picking</td>
                             <td>✅</td>
                             <td>✅</td>
-                            <td>GPU-based picking</td>
-                            <td></td>
+                            <td>GPU ID pass + CPU ray/triangle, thin-instance aware</td>
                         </tr>
                         <tr>
                             <td>WebXR / VR / AR</td>
