@@ -34,10 +34,23 @@ export interface GltfMaterialData {
     clearcoatNormalImage?: ImageBitmap | null;
     /** Raw KHR_materials_clearcoat extension object (undefined when absent). */
     clearcoat?: any;
-    /** Raw KHR_materials_sheen extension object (factor-only; texture not loaded). */
+    /** Raw KHR_materials_sheen extension object. */
     sheen?: any;
+    /** KHR_materials_sheen color texture (RGB). Shared image allowed. */
+    sheenColorImage?: ImageBitmap | null;
+    /** KHR_materials_sheen roughness texture (A). When same image as
+     *  sheenColorImage, only sheenColorImage is set. */
+    sheenRoughnessImage?: ImageBitmap | null;
+    /** True when sheenColorTexture and sheenRoughnessTexture reference the
+     *  same image (the canonical RGB+A packing). Lets the loader wire a
+     *  single Texture2D into sheen.texture. */
+    sheenSharedColorRoughness?: boolean;
     /** Raw KHR_materials_anisotropy extension object. */
     anisotropy?: any;
+    /** Material-wide UV transform from KHR_texture_transform. Populated only
+     *  when every textureInfo on the material declares the same transform.
+     *  `[scaleU, scaleV, offsetU, offsetV]`. Rotation is deferred (logged once). */
+    uvTransformST?: [number, number, number, number];
 }
 
 /** Assemble a PBR material from a glTF material definition. */
@@ -70,6 +83,7 @@ export async function assembleMaterial(
     const pbr = mat.pbrMetallicRoughness ?? {};
     const exts = mat.extensions;
     const specGlossExt = exts?.KHR_materials_pbrSpecularGlossiness;
+    const sheenExt = exts?.KHR_materials_sheen;
 
     const getTexImage = (texInfo: any): Promise<ImageBitmap | null> => {
         if (!texInfo) {
@@ -91,8 +105,11 @@ export async function assembleMaterial(
     // If spec-gloss extension present, use its diffuseTexture as baseColor
     const baseColorTexInfo = specGlossExt?.diffuseTexture ?? pbr.baseColorTexture;
     const specGlossTexInfo = specGlossExt?.specularGlossinessTexture ?? null;
+    const sheenColorTexInfo = sheenExt?.sheenColorTexture;
+    const sheenRoughTexInfo = sheenExt?.sheenRoughnessTexture;
+    const sheenShared = !!(sheenColorTexInfo && sheenRoughTexInfo && sheenColorTexInfo.index === sheenRoughTexInfo.index);
 
-    const [baseColorImg, mrImg, normalImg, occlusionImg, emissiveImg, specGlossImg, ccImg, ccRoughImg, ccNormImg] = await Promise.all([
+    const [baseColorImg, mrImg, normalImg, occlusionImg, emissiveImg, specGlossImg, ccImg, ccRoughImg, ccNormImg, sheenColorImg, sheenRoughImg] = await Promise.all([
         getTexImage(baseColorTexInfo),
         getTexImage(pbr.metallicRoughnessTexture),
         getTexImage(mat.normalTexture),
@@ -102,6 +119,25 @@ export async function assembleMaterial(
         getTexImage(exts?.KHR_materials_clearcoat?.clearcoatTexture),
         getTexImage(exts?.KHR_materials_clearcoat?.clearcoatRoughnessTexture),
         getTexImage(exts?.KHR_materials_clearcoat?.clearcoatNormalTexture),
+        getTexImage(sheenColorTexInfo),
+        sheenShared ? Promise.resolve(null) : getTexImage(sheenRoughTexInfo),
+    ]);
+
+    // Resolve a single material-wide KHR_texture_transform if every textureInfo
+    // on the material declares the same transform. This covers the common case
+    // (e.g. SheenCloth.gltf) without implementing per-texture UV transforms.
+    const uvTransformST = resolveMaterialUvTransform([
+        baseColorTexInfo,
+        pbr.metallicRoughnessTexture,
+        mat.normalTexture,
+        mat.occlusionTexture,
+        mat.emissiveTexture,
+        specGlossTexInfo,
+        exts?.KHR_materials_clearcoat?.clearcoatTexture,
+        exts?.KHR_materials_clearcoat?.clearcoatRoughnessTexture,
+        exts?.KHR_materials_clearcoat?.clearcoatNormalTexture,
+        sheenColorTexInfo,
+        sheenRoughTexInfo,
     ]);
 
     return {
@@ -122,9 +158,33 @@ export async function assembleMaterial(
         clearcoatImage: ccImg,
         clearcoatRoughnessImage: ccRoughImg,
         clearcoatNormalImage: ccNormImg,
-        sheen: exts?.KHR_materials_sheen,
+        sheen: sheenExt,
+        sheenColorImage: sheenColorImg,
+        sheenRoughnessImage: sheenRoughImg,
+        sheenSharedColorRoughness: sheenShared,
         anisotropy: exts?.KHR_materials_anisotropy,
+        uvTransformST,
     };
+}
+
+/** Collapse per-textureInfo KHR_texture_transform into a single material-wide
+ *  scale+offset. Returns undefined when absent, inconsistent, or using rotation. */
+function resolveMaterialUvTransform(texInfos: ReadonlyArray<any>): [number, number, number, number] | undefined {
+    let out: [number, number, number, number] | undefined;
+    for (const ti of texInfos) {
+        const kt = ti?.extensions?.KHR_texture_transform;
+        if (!kt || kt.rotation) {
+            continue;
+        }
+        const s = kt.scale ?? [1, 1];
+        const o = kt.offset ?? [0, 0];
+        if (!out) {
+            out = [s[0], s[1], o[0], o[1]];
+        } else if (s[0] !== out[0] || s[1] !== out[1] || o[0] !== out[2] || o[1] !== out[3]) {
+            return undefined;
+        }
+    }
+    return out;
 }
 
 /** Build optional PBR layer props (clearcoat / sheen / anisotropy) from parsed glTF

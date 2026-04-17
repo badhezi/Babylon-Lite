@@ -83,6 +83,13 @@ export interface PbrMaterialProps {
      *  where the mesh surrounds the camera and should display the environment directly.
      *  Also zeroes SH irradiance — skybox is pure cubemap + BRDF only. */
     skyboxMode?: boolean;
+    /** Material-wide UV transform (scale + offset), applied in the vertex shader
+     *  before emitting `out.uv`. Mirrors BJS `Texture.uScale/vScale/uOffset/vOffset`
+     *  when all textures on the material share the same transform (common case).
+     *  Format: `[uScale, vScale, uOffset, vOffset]`. Absence = identity.
+     *  Set by the glTF loader from `KHR_texture_transform` when every textureInfo
+     *  on a material declares the same transform. */
+    uvTransformST?: [number, number, number, number];
 }
 
 /** @internal Extended PbrMaterialProps with internal build group. */

@@ -3,10 +3,6 @@
  *
  * Dynamically imported by load-gltf.ts ONLY when a material carries one of these
  * extensions. This keeps layer-construction code out of bundles that don't use it.
- *
- * Note: sheen is factor-only. glTF sheen textures are not uploaded — no current
- * parity asset declares KHR_materials_sheen with textures, and scene21 uses sheen
- * via the manual loadTexture2D API.
  */
 import type { GltfMaterialData } from "./gltf-material.js";
 import type { PbrMaterialProps } from "../material/pbr/pbr-material.js";
@@ -19,8 +15,16 @@ export interface GltfClearcoatTextures {
     ccNormalTexture?: Texture2D;
 }
 
+/** Pre-uploaded sheen textures supplied by the main loader. */
+export interface GltfSheenTextures {
+    /** Sheen color texture (sRGB). When the glTF asset shares one image between
+     *  sheenColorTexture and sheenRoughnessTexture (the canonical RGB+A packing),
+     *  this single texture carries both — A channel is sampled for roughness. */
+    sheenTexture?: Texture2D;
+}
+
 /** Build clearcoat / sheen / anisotropy props from parsed glTF extension data. */
-export function buildPbrLayers(m: GltfMaterialData, ccTex?: GltfClearcoatTextures): Partial<PbrMaterialProps> {
+export function buildPbrLayers(m: GltfMaterialData, ccTex?: GltfClearcoatTextures, shTex?: GltfSheenTextures): Partial<PbrMaterialProps> {
     const r: Partial<PbrMaterialProps> = {};
     const c = m.clearcoat;
     if (c) {
@@ -40,7 +44,13 @@ export function buildPbrLayers(m: GltfMaterialData, ccTex?: GltfClearcoatTexture
     }
     const s = m.sheen;
     if (s) {
-        r.sheen = { isEnabled: true, color: s.sheenColorFactor ?? [0, 0, 0], roughness: s.sheenRoughnessFactor ?? 0 };
+        r.sheen = {
+            isEnabled: true,
+            color: s.sheenColorFactor ?? [0, 0, 0],
+            roughness: s.sheenRoughnessFactor ?? 0,
+            intensity: 1,
+            texture: shTex?.sheenTexture,
+        };
     }
     const a = m.anisotropy;
     if (a) {

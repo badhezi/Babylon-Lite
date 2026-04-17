@@ -422,7 +422,10 @@ async function uploadMeshes(engine: EngineContextInternal, meshDatas: GltfMeshDa
                           ccNormalTexture: mat.clearcoatNormalImage ? getCachedTexture(mat.clearcoatNormalImage, false) : undefined,
                       }
                     : undefined;
-                layers = mod.buildPbrLayers(mat, ccTextures);
+                // Upload sheen color texture (sRGB — RGB carries color, A carries roughness
+                // when color/roughness share the same image per KHR_materials_sheen).
+                const sheenTexture = mat.sheenColorImage ? getCachedTexture(mat.sheenColorImage, true) : undefined;
+                layers = mod.buildPbrLayers(mat, ccTextures, { sheenTexture });
             }
 
             return {
@@ -438,6 +441,7 @@ async function uploadMeshes(engine: EngineContextInternal, meshDatas: GltfMeshDa
                 ...(mat.metallicRoughnessImage ? { metallicFactor: mat.metallicFactor, roughnessFactor: mat.roughnessFactor } : undefined),
                 enableSpecularAA: true,
                 ...(mat.alphaMode === "BLEND" ? { alphaBlend: true, alpha: mat.baseColorFactor[3] } : undefined),
+                ...(mat.uvTransformST ? { uvTransformST: mat.uvTransformST } : undefined),
                 ...layers,
                 _buildGroup: pbrGroupBuilder,
             } satisfies PbrMaterialPropsInternal;

@@ -125,7 +125,7 @@ export function buildSinglePbrRenderable(scene: SceneContext, mesh: Mesh): Rende
     const composed = composePbr!(features, features2);
     const variant = getOrCreatePbrPipeline(engine, engine.format, engine.msaaSamples, features, features2, sceneBGL, composed);
     const worldMatrix = mesh.worldMatrix;
-    const meshUBO = _createPbrMeshUBO(engine, worldMatrix, composed);
+    const meshUBO = _createPbrMeshUBO(engine, worldMatrix, composed, mat);
     const materialUBO = _createPbrMaterialUBO(engine, mat, composed);
     const boneView = mesh.skeleton?.boneTexture.createView();
     const morphView = mesh.morphTargets?.texture.createView();

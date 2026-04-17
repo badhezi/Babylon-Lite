@@ -513,7 +513,7 @@ export async function buildPbrRenderables(
         const composed = composePbr(features, features2);
         const variant = getOrCreatePbrPipeline(engine, engine.format, engine.msaaSamples, features, features2, sceneBGL, composed);
         const worldMatrix = mesh.worldMatrix;
-        const meshUBO = createMeshUBO(engine, worldMatrix, composed);
+        const meshUBO = createMeshUBO(engine, worldMatrix, composed, mat);
         const materialUBO = createMaterialUBO(engine, mat, composed);
         const boneView = mesh.skeleton?.boneTexture.createView();
         const morphView = mesh.morphTargets?.texture.createView();
@@ -786,9 +786,11 @@ export async function buildPbrRenderables(
     return { renderables, updater, _sceneBGL: sceneBGL, _sceneBG: sceneBindGroup };
 }
 
-function createMeshUBO(engine: EngineContextInternal, world: Mat4, composed: ComposedShader): GPUBuffer {
+const _UV_IDENTITY = new Float32Array([1, 1, 0, 0]);
+function createMeshUBO(engine: EngineContextInternal, world: Mat4, composed: ComposedShader, material: PbrMaterialProps): GPUBuffer {
     const data = new Float32Array(composed.meshUboSpec.totalBytes / 4);
     data.set(world, 0);
+    data.set(material.uvTransformST ?? _UV_IDENTITY, 16);
     return createUniformBuffer(engine, data);
 }
 

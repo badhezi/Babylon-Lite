@@ -170,8 +170,11 @@ export function createPbrTemplate(config: PbrTemplateConfig): ShaderTemplate {
     }
     baseVaryings.push({ name: "uv", type: "vec2<f32>" });
 
-    // ── Base mesh UBO fields (transform only) ──────────────────────
-    const baseMeshUboFields: UboField[] = [{ name: "world", type: "mat4x4<f32>" }];
+    // ── Base mesh UBO fields (transform + uv transform) ────────────
+    const baseMeshUboFields: UboField[] = [
+        { name: "world", type: "mat4x4<f32>" },
+        { name: "uvTransformST", type: "vec4<f32>" },
+    ];
 
     // ── Base material UBO fields ────────────────────────────────────
     const baseMaterialUboFields: UboField[] = [
@@ -324,7 +327,7 @@ out.worldPos = worldPos4.xyz;
 out.clipPos = scene.viewProj * worldPos4;
 out.worldNormal = (finalWorld * vec4<f32>(normalize(${normVar}), 0.0)).xyz;
 ${tangentBlock}
-out.uv = uv;
+out.uv = uv * mesh.uvTransformST.xy + mesh.uvTransformST.zw;
 /*VB*/
 return out;
 }`;
