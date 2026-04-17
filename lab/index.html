@@ -2829,8 +2829,8 @@
                 <div class="perf-filter-pills" id="bundle-filter-pills"></div>
                 <div style="flex: 1"></div>
                 <button class="btn bundle-sort-btn active" onclick="sortBundleGrid('num')" data-sort="num" title="Sort by scene number">Scene #</button>
-                <button class="btn bundle-sort-btn" onclick="sortBundleGrid('asc')" data-sort="asc" title="Sort by Lite gzip size ascending">Size ↑</button>
-                <button class="btn bundle-sort-btn" onclick="sortBundleGrid('desc')" data-sort="desc" title="Sort by Lite gzip size descending">Size ↓</button>
+                <button class="btn bundle-sort-btn" onclick="sortBundleGrid('asc')" data-sort="asc" title="Sort by Lite min size ascending">Size ↑</button>
+                <button class="btn bundle-sort-btn" onclick="sortBundleGrid('desc')" data-sort="desc" title="Sort by Lite min size descending">Size ↓</button>
             </div>
             <div class="grid" id="bundle-grid"></div>
         </div>
@@ -3146,6 +3146,7 @@
                                     '<span class="size-ratio">' + ratio + '\u00d7</span></div>';
                             }
                             card.innerHTML = html;
+                            card.closest('.card').dataset.rawKb = sizes.rawKB;
                             card.closest('.card').dataset.gzipKb = sizes.gzipKB;
                         }
                         // Re-apply stored sort now that size data is available
@@ -3547,8 +3548,8 @@
                     if (dir === "num") {
                         return parseInt((a.dataset.scene || "").replace("scene", "") || "0") - parseInt((b.dataset.scene || "").replace("scene", "") || "0");
                     }
-                    var aSize = parseFloat(a.dataset.gzipKb || "999");
-                    var bSize = parseFloat(b.dataset.gzipKb || "999");
+                    var aSize = parseFloat(a.dataset.rawKb || "999999");
+                    var bSize = parseFloat(b.dataset.rawKb || "999999");
                     return dir === "asc" ? aSize - bSize : bSize - aSize;
                 });
                 for (var i = 0; i < cards.length; i++) grid.appendChild(cards[i]);
