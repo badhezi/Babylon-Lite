@@ -7,7 +7,6 @@ import type { AssetContainer } from "../asset-container.js";
 import { createTransformNode } from "../scene/transform-node.js";
 import type { Texture2D } from "../texture/texture-2d.js";
 import type { PbrMaterialPropsInternal } from "../material/pbr/pbr-material.js";
-import { pbrGroupBuilder } from "../material/pbr/pbr-material.js";
 import type { Mesh, MeshGPU, MeshInternal } from "../mesh/mesh.js";
 import { initMeshTransform } from "../mesh/mesh.js";
 import { getOrCreateSampler } from "../resource/gpu-pool.js";
@@ -16,8 +15,7 @@ import { parseGlbContainer, resolveAccessor, buildParentMap, computeNodeWorldMat
 import type { GltfMaterialData, GltfMatExtCtx } from "./gltf-material.js";
 import { assembleMaterial, makeImageFetcher } from "./gltf-material.js";
 import type { GltfFeature, GltfLoadCtx } from "./gltf-feature.js";
-import { mipLevelCount } from "../texture/mip-count.js";
-import { linearToSrgbByte } from "../color/color.js";
+import { assemblePbrProps, buildDefaultPbrTextures, runMatExts, uploadTex } from "./gltf-pbr-builder.js";
 
 /** Parsed mesh data ready for GPU upload. */
 export interface GltfMeshData {
@@ -71,28 +69,7 @@ export interface GltfSkinData {
  * registers animation ticks, and applies any scene-level settings.
  */
 export async function loadGltf(engine: EngineContext, url: string): Promise<AssetContainer> {
-    const isGlb = url.toLowerCase().endsWith(".glb");
-    let json: any;
-    let binChunk: DataView;
-    let baseUrl: string;
-
-    if (isGlb) {
-        const buffer = await fetch(url).then((r) => r.arrayBuffer());
-        ({ json, binChunk } = parseGlbContainer(buffer));
-        baseUrl = url.substring(0, url.lastIndexOf("/") + 1);
-    } else {
-        // .gltf: fetch JSON, then resolve external buffer
-        baseUrl = url.substring(0, url.lastIndexOf("/") + 1);
-        json = await fetch(url).then((r) => r.json());
-        const bufferDef = json.buffers?.[0];
-        if (bufferDef?.uri) {
-            const binUrl = new URL(bufferDef.uri, baseUrl + "x").href; // resolve relative to base
-            const binBuffer = await fetch(binUrl).then((r) => r.arrayBuffer());
-            binChunk = new DataView(binBuffer);
-        } else {
-            binChunk = new DataView(new ArrayBuffer(0));
-        }
-    }
+    const { json, binChunk, baseUrl } = await fetchGltfAsset(url);
 
     // Build parent map + world-matrix cache once for O(n) hierarchy traversal
     const parentMap = buildParentMap(json);
@@ -141,6 +118,39 @@ interface GltfFeatureLoader {
     load(): Promise<{ default: GltfFeature }>;
 }
 
+/** Fetch + parse a .glb or .gltf asset. Returns the JSON, binary chunk, and base URL. */
+async function fetchGltfAsset(url: string): Promise<{ json: any; binChunk: DataView; baseUrl: string }> {
+    const baseUrl = url.substring(0, url.lastIndexOf("/") + 1);
+    if (url.toLowerCase().endsWith(".glb")) {
+        const buffer = await fetch(url).then((r) => r.arrayBuffer());
+        const { json, binChunk } = parseGlbContainer(buffer);
+        return { json, binChunk, baseUrl };
+    }
+    const json = await fetch(url).then((r) => r.json());
+    const bufferDef = json.buffers?.[0];
+    let binChunk: DataView;
+    if (bufferDef?.uri) {
+        const binUrl = new URL(bufferDef.uri, baseUrl + "x").href;
+        const binBuffer = await fetch(binUrl).then((r) => r.arrayBuffer());
+        binChunk = new DataView(binBuffer);
+    } else {
+        binChunk = new DataView(new ArrayBuffer(0));
+    }
+    return { json, binChunk, baseUrl };
+}
+
+/** Returns true if any mesh primitive in the asset matches `pred`. */
+function anyPrimitive(json: any, pred: (p: any) => boolean): boolean {
+    for (const m of json.meshes ?? []) {
+        for (const p of m.primitives ?? []) {
+            if (pred(p)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 const hasExt =
     (id: string) =>
     (json: any): boolean =>
@@ -171,32 +181,11 @@ const _features: GltfFeatureLoader[] = [
     { needs: needsOrmComposite, load: () => import("./gltf-ext-orm.js") },
     // Per-mesh features (predicates inlined to avoid eager imports)
     {
-        needs: (json) => {
-            if (!json.skins?.length) {
-                return false;
-            }
-            for (const m of json.meshes ?? []) {
-                for (const p of m.primitives ?? []) {
-                    if (p.attributes?.JOINTS_0 !== undefined) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        },
+        needs: (json) => !!json.skins?.length && anyPrimitive(json, (p) => p.attributes?.JOINTS_0 !== undefined),
         load: () => import("./gltf-feature-skeleton.js"),
     },
     {
-        needs: (json) => {
-            for (const m of json.meshes ?? []) {
-                for (const p of m.primitives ?? []) {
-                    if (p.targets?.length) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        },
+        needs: (json) => anyPrimitive(json, (p) => !!p.targets?.length),
         load: () => import("./gltf-feature-morph.js"),
     },
     // Per-asset features
@@ -376,27 +365,7 @@ async function ensureMipmapModule(): Promise<void> {
 }
 
 function uploadTextureSynced(engine: EngineContextInternal, bitmap: ImageBitmap | null, srgb: boolean, sampler: GPUSampler, fallbackBytes?: Uint8Array): Texture2D {
-    const device = engine.device;
-    const w = bitmap?.width ?? 1;
-    const h = bitmap?.height ?? 1;
-    const format: GPUTextureFormat = srgb ? "rgba8unorm-srgb" : "rgba8unorm";
-    const mips = bitmap ? mipLevelCount(w, h) : 1;
-
-    const texture = device.createTexture({
-        size: { width: w, height: h },
-        format,
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-        mipLevelCount: mips,
-    });
-
-    if (bitmap) {
-        device.queue.copyExternalImageToTexture({ source: bitmap }, { texture, premultipliedAlpha: false }, { width: w, height: h });
-        _generateMipmaps!(engine, texture);
-    } else {
-        device.queue.writeTexture({ texture }, (fallbackBytes ?? new Uint8Array([255, 255, 255, 255])) as Uint8Array<ArrayBuffer>, { bytesPerRow: 4 }, { width: 1, height: 1 });
-    }
-
-    return { texture, view: texture.createView(), sampler, width: w, height: h };
+    return uploadTex(engine, bitmap, srgb, sampler, _generateMipmaps!, fallbackBytes);
 }
 
 async function uploadMeshes(meshDatas: GltfMeshData[], features: GltfFeature[], ctx: GltfLoadCtx): Promise<Mesh[]> {
@@ -455,21 +424,6 @@ async function uploadMeshes(meshDatas: GltfMeshData[], features: GltfFeature[], 
     /** Default ORM upload: single MR-or-occlusion image, or 1×1 fallback baked from
      *  metallicFactor/roughnessFactor. The composite case (MR+occlusion separate) is
      *  handled by the gltf-ext-orm extension which overrides this via `extLayers`. */
-    function getDefaultOrmTexture(mat: GltfMaterialData): Texture2D {
-        const single = mat.metallicRoughnessImage ?? mat.occlusionImage;
-        if (single && (!mat.metallicRoughnessImage || !mat.occlusionImage || mat.metallicRoughnessImage === mat.occlusionImage)) {
-            return getCachedTexture(single, false);
-        }
-        if (!single) {
-            const rf = mat.roughnessFactor;
-            const mf = mat.metallicFactor;
-            const clampByte = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255);
-            return uploadTextureSynced(engine, null, false, sampler, new Uint8Array([255, clampByte(rf), clampByte(mf), 255]));
-        }
-        // Separate MR + occlusion: ext will override, but we need a non-null
-        // placeholder until then — return the MR image as a sensible default.
-        return getCachedTexture(mat.metallicRoughnessImage!, false);
-    }
 
     // Build a PbrMaterialPropsInternal from parsed glTF material data.
     // Uses shared texture caches so identical bitmaps are uploaded once.
@@ -480,46 +434,9 @@ async function uploadMeshes(meshDatas: GltfMeshData[], features: GltfFeature[], 
             return cached;
         }
         cached = (async () => {
-            const baseColorTexture = mat.baseColorImage
-                ? getCachedTexture(mat.baseColorImage, true)
-                : (() => {
-                      const f = mat.baseColorFactor;
-                      const bytes = new Uint8Array([linearToSrgbByte(f[0]), linearToSrgbByte(f[1]), linearToSrgbByte(f[2]), Math.round(Math.max(0, Math.min(1, f[3])) * 255)]);
-                      return uploadTextureSynced(engine, null, true, sampler, bytes);
-                  })();
-            const normalTexture = mat.normalImage ? getCachedTexture(mat.normalImage, false) : undefined;
-            const emissiveTexture = mat.emissiveImage ? getCachedTexture(mat.emissiveImage, true) : undefined;
-            const ormTexture = getDefaultOrmTexture(mat);
-
-            // Run all material exts (KHR_*, UV transform, ORM compositing).
-            // Each ext may return a partial PbrMaterialProps; later layers override
-            // earlier ones, so e.g. the ORM ext can replace the default ormTexture.
-            let extLayers: Partial<import("../material/pbr/pbr-material.js").PbrMaterialProps> | undefined;
-            if (matExts.length > 0) {
-                const fragments = await Promise.all(matExts.map((ext) => ext.applyMaterial!(mat, extCtx)));
-                for (const f of fragments) {
-                    if (f) {
-                        extLayers ??= {};
-                        Object.assign(extLayers, f);
-                    }
-                }
-            }
-
-            return {
-                baseColorTexture,
-                normalTexture,
-                ormTexture,
-                emissiveTexture,
-                doubleSided: mat.doubleSided,
-                occlusionStrength: mat.occlusionImage ? 1.0 : 0,
-                // Apply glTF metallicFactor/roughnessFactor only when a real MR texture is present.
-                // When no MR texture, the factors are already baked into the 1×1 fallback ORM bytes above.
-                ...(mat.metallicRoughnessImage ? { metallicFactor: mat.metallicFactor, roughnessFactor: mat.roughnessFactor } : undefined),
-                enableSpecularAA: true,
-                ...(mat.alphaMode === "BLEND" ? { alphaBlend: true, alpha: mat.baseColorFactor[3] } : undefined),
-                ...extLayers,
-                _buildGroup: pbrGroupBuilder,
-            } satisfies PbrMaterialPropsInternal;
+            const tex = buildDefaultPbrTextures(engine, mat, sampler, _generateMipmaps!, getCachedTexture);
+            const extLayers = await runMatExts(mat, matExts, extCtx);
+            return assemblePbrProps(mat, tex.baseColorTexture, tex.ormTexture, tex.normalTexture, tex.emissiveTexture, extLayers);
         })();
         builtMaterialCache.set(mat, cached);
         return cached;
