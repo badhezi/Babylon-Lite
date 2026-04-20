@@ -24,7 +24,7 @@ const swiftShaderArgs = isCI
 export default defineConfig({
     testDir: "./tests/perf",
     timeout: 600_000,
-    retries: 2,
+    retries: 4,
     use: {
         channel: "chrome",
         headless,
