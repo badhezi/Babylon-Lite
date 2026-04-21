@@ -325,6 +325,16 @@
         "tags": ["pbr", "gltf", "env", "gpu-instancing"]
     },
     {
+        "id": 36,
+        "slug": "scene36-basis-texture",
+        "name": "Scene 36 — Basis Universal Texture",
+        "maxMad": 0.5,
+        "maxRawKB": 52.5,
+        "description": "Box with a .basis texture as diffuse+emissive. Transcoder fetched from the BJS CDN; auto-selects BC7/ASTC/ETC2/BC3/RGBA32 per device. Matches PG #4RN0VF.",
+        "tags": ["std", "procedural", "basis"],
+        "skipParity": true
+    },
+    {
         "id": 40,
         "slug": "scene40-physics",
         "name": "Scene 40 — Physics",
