@@ -22,11 +22,7 @@ export function mat4Identity(): Mat4 {
 /** Multiply two Mat4: out = a * b (column-major). */
 export function mat4Multiply(a: Mat4, b: Mat4): Mat4 {
     const out = new Float32Array(16) as Mat4;
-    for (let col = 0; col < 4; col++) {
-        for (let row = 0; row < 4; row++) {
-            out[col * 4 + row] = a[row]! * b[col * 4]! + a[4 + row]! * b[col * 4 + 1]! + a[8 + row]! * b[col * 4 + 2]! + a[12 + row]! * b[col * 4 + 3]!;
-        }
-    }
+    mat4MultiplyInto(out, 0, a, 0, b, 0);
     return out;
 }
 
