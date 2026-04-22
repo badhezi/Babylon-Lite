@@ -34,6 +34,10 @@ import {
     PBR_HAS_NORMAL_MAP,
     PBR_HAS_ALPHA_BLEND,
     PBR2_HAS_REFRACTION,
+    PBR2_HAS_UV_TRANSFORM,
+    PBR2_HAS_REFLECTANCE_FACTORS,
+    PBR2_HAS_VERTEX_COLOR,
+    PBR2_HAS_UV2,
     PBR_HAS_METALLIC_REFLECTANCE_MAP,
     PBR_HAS_REFLECTANCE_MAP,
     PBR_HAS_SPECULAR_AA,
@@ -44,10 +48,8 @@ import {
 import { PBR_HAS_THIN_INSTANCES, PBR_HAS_INSTANCE_COLOR } from "./pbr-pipeline.js";
 import {
     _getPbrLightExtension,
-    _getPbrMaterialUboWriters,
     _registerPbrExt,
     _getPbrExts,
-    _registerPbrMaterialUboWriter,
     PBR_HAS_EMISSIVE,
     PBR_HAS_ENV,
     PBR_HAS_TONEMAP,
@@ -80,6 +82,8 @@ interface PbrDrawPacket {
     normalBuffer: GPUBuffer;
     tangentBuffer: GPUBuffer | null;
     uvBuffer: GPUBuffer;
+    uv2Buffer: GPUBuffer | null;
+    colorBuffer: GPUBuffer | null;
     jointsBuffer: GPUBuffer | null;
     weightsBuffer: GPUBuffer | null;
     joints1Buffer: GPUBuffer | null;
@@ -152,61 +156,29 @@ export async function buildPbrRenderables(
     let hasSomeMorphs = false;
     let hasSomeThinInstances = false;
     let hasAnyUnlit = false;
+    let hasAnyUvTransform = false;
+    let hasAnyUv2 = false;
+    let hasAnyVertexColor = false;
     for (let i = 0; i < meshes.length; i++) {
         const m = meshes[i]!;
-        const mat = m.material as PbrMaterialProps;
-        if (!hasSkybox && !!mat.skyboxMode) {
-            hasSkybox = true;
-        }
-        if (!hasMetallicReflectance && (!!mat.metallicReflectanceTexture || !!mat.reflectanceTexture)) {
-            hasMetallicReflectance = true;
-        }
-        if (!hasClearcoat && !!mat.clearCoat?.isEnabled) {
-            hasClearcoat = true;
-        }
-        if (!hasSheen && !!mat.sheen?.isEnabled) {
-            hasSheen = true;
-        }
-        if (!hasAnyAnisotropy && !!mat.anisotropy?.isEnabled) {
-            hasAnyAnisotropy = true;
-        }
-        if (!hasAnySubsurface && !!mat.subsurface?.translucency) {
-            hasAnySubsurface = true;
-        }
-        if (!hasRefraction && (mat.subsurface?.refraction?.intensity ?? 0) > 0) {
-            hasRefraction = true;
-        }
-        if (!needsEmissiveColor && !!mat.emissiveColor) {
-            needsEmissiveColor = true;
-        }
-        if (!hasSomeSkeletons && !!m.skeleton) {
-            hasSomeSkeletons = true;
-        }
-        if (!hasSomeMorphs && !!m.morphTargets) {
-            hasSomeMorphs = true;
-        }
-        if (!hasSomeThinInstances && !!m.thinInstances) {
-            hasSomeThinInstances = true;
-        }
-        if (!hasAnyUnlit && !!mat.unlit) {
-            hasAnyUnlit = true;
-        }
-        if (
-            hasSkybox &&
-            hasMetallicReflectance &&
-            hasClearcoat &&
-            hasSheen &&
-            hasAnyAnisotropy &&
-            hasAnySubsurface &&
-            hasRefraction &&
-            needsEmissiveColor &&
-            hasSomeSkeletons &&
-            hasSomeMorphs &&
-            hasSomeThinInstances &&
-            hasAnyUnlit
-        ) {
-            break;
-        }
+        const mat = m.material as PbrMaterialProps & { _hasReflExt?: boolean; _hasUvTx?: boolean };
+        const mi = m as import("../../mesh/mesh.js").MeshInternal;
+        hasSkybox ||= !!mat.skyboxMode;
+        hasMetallicReflectance ||= !!(mat.metallicReflectanceTexture || mat.reflectanceTexture || mat._hasReflExt);
+        hasClearcoat ||= !!mat.clearCoat?.isEnabled;
+        hasSheen ||= !!mat.sheen?.isEnabled;
+        hasAnyAnisotropy ||= !!mat.anisotropy?.isEnabled;
+        hasAnySubsurface ||= !!mat.subsurface?.translucency;
+        hasRefraction ||= (mat.subsurface?.refraction?.intensity ?? 0) > 0;
+        needsEmissiveColor ||= !!mat.emissiveColor;
+        hasSomeSkeletons ||= !!m.skeleton;
+        hasSomeMorphs ||= !!m.morphTargets;
+        hasSomeThinInstances ||= !!m.thinInstances;
+        hasAnyUnlit ||= !!mat.unlit;
+        hasAnyUvTransform ||= !!mat._hasUvTx;
+        // UV2 only counts when occlusion is on texcoord 1 (matches pbr-mesh-features.ts).
+        hasAnyUv2 ||= !!mi._gpu.uv2Buffer && mat.occlusionTexCoord === 1;
+        hasAnyVertexColor ||= !!mi._gpu.colorBuffer;
     }
 
     // IBL fragment
@@ -262,8 +234,7 @@ export async function buildPbrRenderables(
     let _anisoExt: typeof import("./fragments/anisotropy-fragment.js") | null = null;
     if (hasAnyAnisotropy) {
         _anisoExt = await import("./fragments/anisotropy-fragment.js");
-        const anisoMod = _anisoExt;
-        _registerPbrMaterialUboWriter("anisotropy", (d, m, o) => anisoMod.writeAnisotropyUBO(d, m as PbrMaterialProps, o));
+        _registerPbrExt(_anisoExt.anisotropyExt);
     }
 
     if (hasAnySubsurface) {
@@ -296,6 +267,20 @@ export async function buildPbrRenderables(
         _registerPbrExt(mod.morphExt);
     }
 
+    if (hasAnyUvTransform) {
+        const mod = await import("./fragments/uv-transform-fragment.js");
+        _registerPbrExt(mod.uvTransformExt);
+    }
+
+    // Lazy-load pbr-template-ext when any advanced features are present.
+    // Scene1 has none of these, so it won't pay the ~1.5KB cost.
+    let _createPbrTemplateExt: typeof import("./pbr-template-ext.js").createPbrTemplateExt | null = null;
+    const hasAnyExt = hasAnyUvTransform || hasAnyVertexColor || hasAnyUv2;
+    if (hasAnyExt) {
+        const extMod = await import("./pbr-template-ext.js");
+        _createPbrTemplateExt = extMod.createPbrTemplateExt;
+    }
+
     let _createThinInstanceFragment: ((hasColor: boolean) => ShaderFragment) | null = null;
     let _syncThinInstanceBuffers:
         | ((engine: EngineContextInternal, ti: ThinInstanceData, pass: GPURenderPassEncoder | GPURenderBundleEncoder, slot: number, hasColor: boolean) => number)
@@ -326,7 +311,7 @@ export async function buildPbrRenderables(
         const has = (bit: number) => (f & bit) !== 0;
         const hasNormal = has(PBR_HAS_NORMAL_MAP);
         const hasCotangent = has(PBR_HAS_COTANGENT_NORMAL);
-        const hasReflExt = has(PBR_HAS_METALLIC_REFLECTANCE_MAP | PBR_HAS_REFLECTANCE_MAP);
+        const hasReflExt = has(PBR_HAS_METALLIC_REFLECTANCE_MAP | PBR_HAS_REFLECTANCE_MAP) || (features2 & PBR2_HAS_REFLECTANCE_FACTORS) !== 0;
         const hasIbl = has(PBR_HAS_ENV);
         const hasMorph = has(PBR_HAS_MORPH_TARGETS);
         const hasShadow = has(PBR_HAS_RECEIVE_SHADOWS);
@@ -334,6 +319,24 @@ export async function buildPbrRenderables(
         const hasEmCol = has(PBR_HAS_EMISSIVE_COLOR);
         const hasEmTex = has(PBR_HAS_EMISSIVE);
         const hasTI = has(PBR_HAS_THIN_INSTANCES);
+
+        // Build optional ext config when any of these features are present.
+        const hasUvTx = (features2 & PBR2_HAS_UV_TRANSFORM) !== 0;
+        const hasVC = (features2 & PBR2_HAS_VERTEX_COLOR) !== 0;
+        const hasU2 = (features2 & PBR2_HAS_UV2) !== 0;
+        const needsExt = hasUvTx || hasVC || hasU2;
+        const ext =
+            needsExt && _createPbrTemplateExt
+                ? _createPbrTemplateExt({
+                      hasUvTransform: hasUvTx,
+                      hasVertexColor: hasVC,
+                      hasUv2: hasU2,
+                      hasOcclusionUv2: hasU2, // When UV2 is present and has occlusion on texcoord 1
+                      hasAnyNormal: hasNormal || hasCotangent,
+                      hasEmissiveTexture: hasEmTex,
+                      hasSpecGloss: has(PBR_HAS_SPEC_GLOSS),
+                  })
+                : undefined;
 
         const template = createPbrTemplate({
             light: hasMultiLight ? null : lightConfig,
@@ -359,6 +362,7 @@ export async function buildPbrRenderables(
             anisoBrdfFunctions: hasAniso && _anisoExt ? _anisoExt.ANISO_BRDF_FUNCTIONS : "",
             anisoTBBlock: hasAniso && _anisoExt ? _anisoExt.makeAnisotropyTBBlock(hasNormal) : "",
             anisoDirectDG: hasAniso && _anisoExt ? _anisoExt.ANISO_DIRECT_DG : "",
+            ext,
         });
 
         const frags: ShaderFragment[] = [];
@@ -491,6 +495,8 @@ export async function buildPbrRenderables(
             normalBuffer: gpu.normalBuffer,
             tangentBuffer: gpu.tangentBuffer ?? null,
             uvBuffer: gpu.uvBuffer,
+            uv2Buffer: gpu.uv2Buffer ?? null,
+            colorBuffer: gpu.colorBuffer ?? null,
             jointsBuffer: mesh.skeleton?.jointsBuffer ?? null,
             weightsBuffer: mesh.skeleton?.weightsBuffer ?? null,
             joints1Buffer: mesh.skeleton?.joints1Buffer ?? null,
@@ -551,6 +557,12 @@ export async function buildPbrRenderables(
                 pass.setVertexBuffer(slot++, dp.tangentBuffer);
             }
             pass.setVertexBuffer(slot++, dp.uvBuffer);
+            if ((dp.variant.features2 & PBR2_HAS_UV2) !== 0 && dp.uv2Buffer) {
+                pass.setVertexBuffer(slot++, dp.uv2Buffer);
+            }
+            if ((dp.variant.features2 & PBR2_HAS_VERTEX_COLOR) !== 0 && dp.colorBuffer) {
+                pass.setVertexBuffer(slot++, dp.colorBuffer);
+            }
             if (dp.jointsBuffer && dp.weightsBuffer) {
                 pass.setVertexBuffer(slot++, dp.jointsBuffer);
                 pass.setVertexBuffer(slot++, dp.weightsBuffer);
@@ -642,11 +654,9 @@ export async function buildPbrRenderables(
     return { renderables, updater, _sceneBGL: sceneBGL, _sceneBG: sceneBindGroup };
 }
 
-const _UV_IDENTITY = new Float32Array([1, 1, 0, 0]);
-function createMeshUBO(engine: EngineContextInternal, world: Mat4, composed: ComposedShader, material: PbrMaterialProps): GPUBuffer {
+function createMeshUBO(engine: EngineContextInternal, world: Mat4, composed: ComposedShader, _material: PbrMaterialProps): GPUBuffer {
     const data = new Float32Array(composed.meshUboSpec.totalBytes / 4);
     data.set(world, 0);
-    data.set(material.uvTransformST ?? _UV_IDENTITY, 16);
     return createUniformBuffer(engine, data);
 }
 
@@ -664,13 +674,11 @@ function writeMaterialData(data: Float32Array, material: PbrMaterialProps, spec:
         const off = spec.offsets.get("metallicFactor")! / 4;
         data[off] = material.metallicFactor ?? 1.0;
         data[off + 1] = material.roughnessFactor ?? 1.0;
+        data[off + 2] = material.normalTextureScale ?? 1.0;
     }
 
-    for (const write of _getPbrMaterialUboWriters().values()) {
-        write(data, material, spec.offsets);
-    }
-
-    // Unified PBR extensions contribute their material-UBO slice.
+    // Unified PBR extensions contribute their material-UBO slice
+    // (uv-transform, reflectance, emissive, clearcoat, sheen, anisotropy, ...).
     for (const ext of _getPbrExts().values()) {
         if (ext.writeUbo) {
             ext.writeUbo(data, material, spec.offsets);

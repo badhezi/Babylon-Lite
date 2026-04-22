@@ -53,6 +53,20 @@ export const PBR2_HAS_REFRACTION_MAP = 1 << 6;
 export const PBR2_HAS_THICKNESS_GLTF_CHANNEL = 1 << 7;
 /** Material is unlit — bypass all lighting (KHR_materials_unlit). */
 export const PBR2_HAS_UNLIT = 1 << 8;
+/** Any bound texture on this material carries a non-identity UV transform
+ *  (`uScale/vScale/uOffset/vOffset/uAng` on its Texture2D). Enables per-
+ *  texture UV-transform UBO fields + `txfUV` wrapping in the shader. */
+export const PBR2_HAS_UV_TRANSFORM = 1 << 9;
+/** Material has non-default metallicF0Factor or metallicReflectanceColor
+ *  without reflectance textures (factor-only KHR_materials_specular). */
+export const PBR2_HAS_REFLECTANCE_FACTORS = 1 << 10;
+/** Mesh has per-vertex COLOR_0 data. */
+export const PBR2_HAS_VERTEX_COLOR = 1 << 11;
+/** Mesh has a second UV set (TEXCOORD_1) and the material uses it for occlusion. */
+export const PBR2_HAS_UV2 = 1 << 12;
+/** Material has a sheen texture with a KHR_texture_transform. Sheen owns its
+ *  own `sheenUVm`/`sheenUVt` UBO fields and applies txfUV locally. */
+export const PBR2_HAS_SHEEN_UV_TX = 1 << 13;
 
 let _lightExt: PbrLightExtension | null = null;
 /** @internal */ export function _setPbrLightExtension(ext: PbrLightExtension): void {
@@ -64,24 +78,6 @@ let _lightExt: PbrLightExtension | null = null;
 const _lightTagToType: Record<string, number> = { hemispheric: 1, directional: 2, point: 3 };
 /** @internal */ export function getLightTypeFeatureBits(): number {
     return (_lightTagToType[_lightExt?.tag ?? ""] ?? 0) << PBR_LIGHT_TYPE_SHIFT;
-}
-
-// ─── Material UBO Writer Registry ───────────────────────────────────
-/** @internal Signature for a material-UBO writer contributed by a PBR fragment.
- *  Called once per material update. Each writer checks its own gating
- *  (material props + presence of its UBO fields in `offsets`) and writes
- *  only the slice it owns. Keeps `pbr-renderable.writeMaterialData` neutral. */
-export type PbrMaterialUboWriter = (data: Float32Array, material: unknown, offsets: ReadonlyMap<string, number>) => void;
-
-const _matUboWriters = new Map<string, PbrMaterialUboWriter>();
-/** @internal Register a material-UBO writer. Keyed by fragment id so
- *  repeated dynamic imports of the same fragment remain idempotent. */
-export function _registerPbrMaterialUboWriter(id: string, fn: PbrMaterialUboWriter): void {
-    _matUboWriters.set(id, fn);
-}
-/** @internal Iterate the registered writers. */
-export function _getPbrMaterialUboWriters(): ReadonlyMap<string, PbrMaterialUboWriter> {
-    return _matUboWriters;
 }
 
 // ─── Unified PBR Extension Registry ─────────────────────────────────
