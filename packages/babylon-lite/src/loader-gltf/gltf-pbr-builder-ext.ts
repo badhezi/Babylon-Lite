@@ -6,6 +6,7 @@
 
 import type { EngineContextInternal } from "../engine/engine.js";
 import type { Texture2D } from "../texture/texture-2d.js";
+import { cloneTexture2D } from "../texture/texture-2d.js";
 import type { PbrMaterialProps, PbrMaterialPropsInternal } from "../material/pbr/pbr-material.js";
 import { pbrGroupBuilder } from "../material/pbr/pbr-material.js";
 import type { GltfMaterialData } from "./gltf-material.js";
@@ -21,6 +22,16 @@ export interface PbrTexturesExt {
     occlusionTexture: Texture2D | undefined;
 }
 
+/** Stamp `_texCoord=1` on a clone when textureInfo selects UV1 and the
+ *  wrapTex layer didn't already set it (i.e. scene has no KHR_texture_transform). */
+function wrapTexCoord(tex: Texture2D, texInfo: unknown): Texture2D {
+    if (!texInfo) return tex;
+    if ((tex as { _texCoord?: 0 | 1 })._texCoord === 1) return tex;
+    const ti = texInfo as { texCoord?: number; extensions?: { KHR_texture_transform?: { texCoord?: number } } };
+    const tc = ti.extensions?.KHR_texture_transform?.texCoord ?? ti.texCoord;
+    return tc === 1 ? cloneTexture2D(tex, { _texCoord: 1 }) : tex;
+}
+
 /** Build textures with wrapTex + occlusionOnUv2 support. Mirrors master's
  *  default texture building but honors per-textureInfo wrapping so
  *  KHR_texture_transform can attach per-texture UV state. */
@@ -32,10 +43,11 @@ export function buildDefaultPbrTexturesExt(
     getCachedTex: (bitmap: ImageBitmap, srgb: boolean) => Texture2D,
     wrapTex: TextureWrapFn
 ): PbrTexturesExt {
+    const wrap: TextureWrapFn = (tex, ti) => wrapTexCoord(wrapTex(tex, ti), ti);
     const raw = mat._rawMatDef ?? {};
     const pbr = raw.pbrMetallicRoughness ?? {};
     const baseColorTexture = mat.baseColorImage
-        ? wrapTex(getCachedTex(mat.baseColorImage, true), pbr.baseColorTexture)
+        ? wrap(getCachedTex(mat.baseColorImage, true), pbr.baseColorTexture)
         : (() => {
               const f = mat.baseColorFactor;
               return uploadTex(
@@ -47,8 +59,8 @@ export function buildDefaultPbrTexturesExt(
                   new Uint8Array([linearToSrgbByte(f[0]), linearToSrgbByte(f[1]), linearToSrgbByte(f[2]), Math.round(Math.max(0, Math.min(1, f[3])) * 255)])
               );
           })();
-    const normalTexture = mat.normalImage ? wrapTex(getCachedTex(mat.normalImage, false), raw.normalTexture) : undefined;
-    const emissiveTexture = mat.emissiveImage ? wrapTex(getCachedTex(mat.emissiveImage, true), raw.emissiveTexture) : undefined;
+    const normalTexture = mat.normalImage ? wrap(getCachedTex(mat.normalImage, false), raw.normalTexture) : undefined;
+    const emissiveTexture = mat.emissiveImage ? wrap(getCachedTex(mat.emissiveImage, true), raw.emissiveTexture) : undefined;
 
     const occlusionOnUv2 = mat.occlusionTexCoord !== 0 && mat.occlusionImage && !mat.metallicRoughnessImage;
     let occlusionTexture: Texture2D | undefined;
@@ -57,15 +69,15 @@ export function buildDefaultPbrTexturesExt(
     if (occlusionOnUv2) {
         const clamp = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255);
         ormTexture = uploadTex(engine, null, false, sampler, generateMipmaps, new Uint8Array([255, clamp(mat.roughnessFactor), clamp(mat.metallicFactor), 255]));
-        occlusionTexture = wrapTex(getCachedTex(mat.occlusionImage!, false), raw.occlusionTexture);
+        occlusionTexture = wrap(getCachedTex(mat.occlusionImage!, false), raw.occlusionTexture);
     } else if (single && (!mat.metallicRoughnessImage || !mat.occlusionImage || mat.metallicRoughnessImage === mat.occlusionImage)) {
         const ormTi = mat.metallicRoughnessImage ? pbr.metallicRoughnessTexture : raw.occlusionTexture;
-        ormTexture = wrapTex(getCachedTex(single, false), ormTi);
+        ormTexture = wrap(getCachedTex(single, false), ormTi);
     } else if (!single) {
         const clamp = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255);
         ormTexture = uploadTex(engine, null, false, sampler, generateMipmaps, new Uint8Array([255, clamp(mat.roughnessFactor), clamp(mat.metallicFactor), 255]));
     } else {
-        ormTexture = wrapTex(getCachedTex(mat.metallicRoughnessImage!, false), pbr.metallicRoughnessTexture);
+        ormTexture = wrap(getCachedTex(mat.metallicRoughnessImage!, false), pbr.metallicRoughnessTexture);
     }
     return { baseColorTexture, ormTexture, normalTexture, emissiveTexture, occlusionTexture };
 }

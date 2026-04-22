@@ -431,18 +431,13 @@ async function uploadMeshes(meshDatas: GltfMeshData[], features: GltfFeature[], 
         },
     };
 
-    // Slow-path trigger: per-texture UV wrapping OR occlusion sampled on UV2
-    // (texCoord=1 with no shared MR). Both cases require the ext module that
-    // builds textures with wrapTex and threads an occlusionTexture through
-    // assemblePbrProps. Scene1 (plain BoomBox PBR) hits neither → fast path.
+    // Slow-path trigger: per-texture UV wrapping (KHR_texture_transform)
+    // or any core texture declaring texCoord=1. Scene1 stays identity→fast path.
     let _needsPbrExt = wrapTex !== identityTexWrap;
     if (!_needsPbrExt) {
-        for (const m of (json as { materials?: unknown[] }).materials ?? []) {
-            const mm = m as { occlusionTexture?: { texCoord?: number }; pbrMetallicRoughness?: { metallicRoughnessTexture?: unknown } };
-            if (mm.occlusionTexture && (mm.occlusionTexture.texCoord ?? 0) !== 0 && !mm.pbrMetallicRoughness?.metallicRoughnessTexture) {
-                _needsPbrExt = true;
-                break;
-            }
+        const mats = (json as { materials?: unknown[] }).materials;
+        if (mats && JSON.stringify(mats).includes('"texCoord":1')) {
+            _needsPbrExt = true;
         }
     }
     let _pbrExtPromise: Promise<typeof import("./gltf-pbr-builder-ext.js")> | null = null;
