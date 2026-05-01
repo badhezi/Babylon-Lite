@@ -246,7 +246,16 @@ export async function parseNodeMaterialFromSnippet(engine: EngineContext, snippe
 
     const _buildGroup: MeshGroupBuilder = async (scene, meshes): Promise<MeshGroupBuildResult> => {
         const { buildNodeMeshRenderables } = await import("./node-renderable.js");
-        return buildNodeMeshRenderables(scene, meshes);
+        const result = buildNodeMeshRenderables(scene, meshes);
+        // NME doesn't support per-mesh material rebuilds (no per-pass override / material swap
+        // currently; the NME node graph baked into the pipeline is fixed at build time).
+        // Provide a no-op rebuildSingle that throws so callers can detect unsupported usage.
+        return {
+            ...result,
+            rebuildSingle: () => {
+                throw new Error("NodeMaterial does not currently support per-mesh material rebuild (per-pass override / material swap).");
+            },
+        };
     };
 
     const material: NodeMaterialInternal = {
