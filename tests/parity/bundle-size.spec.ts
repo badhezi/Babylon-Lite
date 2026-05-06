@@ -29,20 +29,26 @@ const SCENES = allScenes.filter((s) => s.maxRawKB != null);
 for (const scene of SCENES) {
     test(`${scene.name} bundle ≤ ${scene.maxRawKB} KB raw`, async ({ page }) => {
         const jsPayloads: { url: string; file: string; body: Buffer }[] = [];
+        const responseReads: Promise<void>[] = [];
 
         // Intercept every JS response served from /bundle/
-        page.on("response", async (resp) => {
+        page.on("response", (resp) => {
             const url = resp.url();
             if (url.includes("/bundle/") && url.endsWith(".js") && resp.ok()) {
-                const body = await resp.body();
-                const file = url.split("/").pop()!.split("?")[0]!;
-                jsPayloads.push({ url, file, body });
+                responseReads.push(
+                    (async () => {
+                        const body = await resp.body();
+                        const file = url.split("/").pop()!.split("?")[0]!;
+                        jsPayloads.push({ url, file, body });
+                    })()
+                );
             }
         });
 
         // Navigate to the bundle page and wait for the scene to finish rendering
         await page.goto(`/bundle-scene${scene.id}.html`);
         await page.waitForFunction(() => document.querySelector("canvas")?.dataset.ready === "true", { timeout: 50_000 });
+        await Promise.all(responseReads);
 
         // Tally raw + gzipped sizes of all JS that was actually loaded (gzip is informational only).
         // Local serialized NME scene data is ignored so ceilings track runtime code.

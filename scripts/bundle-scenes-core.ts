@@ -936,18 +936,20 @@ async function measurePage(
     const page = await browser.newPage();
     const jsPayloads: RuntimeJsPayload[] = [];
     const chunkFiles: string[] = [];
+    const responseReads: Promise<void>[] = [];
 
-    page.on("response", async (resp: any) => {
+    page.on("response", (resp: any) => {
         const url = resp.url();
         if (url.includes(bundlePath) && url.endsWith(".js") && resp.ok()) {
-            try {
-                const idx = url.indexOf(bundlePath);
-                const fileName = url.slice(idx + bundlePath.length).split("?")[0];
-                jsPayloads.push({ file: fileName, body: await resp.body() });
-                chunkFiles.push(fileName);
-            } catch {
-                /* page may close before body resolves */
-            }
+            responseReads.push(
+                (async () => {
+                    const idx = url.indexOf(bundlePath);
+                    const fileName = url.slice(idx + bundlePath.length).split("?")[0];
+                    const body = await resp.body();
+                    jsPayloads.push({ file: fileName, body });
+                    chunkFiles.push(fileName);
+                })()
+            );
         }
     });
 
@@ -958,6 +960,7 @@ async function measurePage(
         // BJS pages may not reach ready state without GPU — just measure fetched JS
     }
 
+    await Promise.all(responseReads);
     const summary = summarizeRuntimeBundle(jsPayloads, bundleInfoDir, scene);
 
     await page.close();
