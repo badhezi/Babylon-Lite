@@ -1,7 +1,7 @@
 {
   "offscreen": {
-    "rawKB": 90.4,
-    "gzipKB": 35.7
+    "rawKB": 175.2,
+    "gzipKB": 72.4
   },
   "torus-states": {
     "rawKB": 25.2,
@@ -24,8 +24,8 @@
     "gzipKB": 20.1
   },
   "tetris": {
-    "rawKB": 105.2,
-    "gzipKB": 40.6
+    "rawKB": 110,
+    "gzipKB": 42.2
   },
   "mosquito-amber": {
     "rawKB": 102.6,
