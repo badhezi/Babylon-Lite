@@ -22,7 +22,7 @@
  */
 
 /** Identifies a single geometry texture supported by `createGeometryRendererTask`. */
-export enum GeometryTextureType {
+export const enum GeometryTextureType {
     /** Half-float RGBA — diffuse irradiance accumulated at the surface. */
     IRRADIANCE = 0,
     /** Half-float RGBA — world-space position. */
