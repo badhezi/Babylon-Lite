@@ -52,6 +52,9 @@ export type { ShadowTask } from "./frame-graph/shadow-task.js";
 export type { RenderTarget, RenderTargetDescriptor } from "./engine/render-target.js";
 export { createRenderTarget } from "./engine/render-target.js";
 export { createRenderTargetTexture } from "./texture/rtt.js";
+// Pooled GPU samplers (same descriptor → same GPUSampler). Public so consumers building their own
+// sampled-texture wrappers around managed render targets don't have to reach into `engine._device`.
+export { getOrCreateSampler, clearSamplerCache } from "./resource/gpu-pool.js";
 export { enableSceneTransmission, enableRenderTaskTransmission } from "./frame-graph/transmission.js";
 export type { TransmissionOptions, SceneColorGrab } from "./frame-graph/transmission.js";
 
