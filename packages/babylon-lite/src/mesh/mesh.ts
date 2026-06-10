@@ -100,6 +100,9 @@ export interface Mesh extends SceneNode {
     renderOnTop?: boolean;
     /** Thin instance data (CPU-side). GPU buffer managed by render system. */
     thinInstances?: ThinInstanceData | null;
+    /** When `false`, the GPU picker skips this mesh.  Defaults to `true`
+     *  (undefined behaves as pickable).  Mirrors BJS `AbstractMesh.isPickable`. */
+    pickable?: boolean;
     // name, children, position, rotation, rotationQuaternion, scaling,
     // parent, worldMatrix, worldMatrixVersion — all inherited from SceneNode
 

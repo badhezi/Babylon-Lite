@@ -87,7 +87,7 @@ export type { DepthOfFieldPostProcessTask, DepthOfFieldPostProcessTaskConfig } f
 // ─── Camera ──────────────────────────────────────────────────────────
 export { createArcRotateCamera } from "./camera/arc-rotate.js";
 export { attachControl, setCameraLimits } from "./camera/arc-rotate-controls.js";
-export type { ArcRotateCameraLimits } from "./camera/arc-rotate-controls.js";
+export type { AttachControlOptions, ArcRotateCameraLimits } from "./camera/arc-rotate-controls.js";
 export { createFreeCamera } from "./camera/free-camera.js";
 export { attachFreeControl } from "./camera/free-camera-controls.js";
 
@@ -332,6 +332,32 @@ export type { GpuPicker, PickOptions } from "./picking/gpu-picker.js";
 export type { PickingInfo } from "./picking/picking-info.js";
 export { enableDetailedPicking } from "./picking/detailed-picking.js";
 export { getPickedNormal, getPickedUV } from "./picking/picking-helpers.js";
+
+// ─── Gizmos ──────────────────────────────────────────────────────────
+export { createUtilityLayer, registerUtilityLayer, disposeUtilityLayer } from "./gizmo/utility-layer.js";
+export type { UtilityLayer, UtilityLayerOptions } from "./gizmo/utility-layer.js";
+export { createPointerDrag, registerPointerDrag, isGizmoInteracting, isGizmoDragging, isGizmoPickPending } from "./gizmo/pointer-drag.js";
+export type { PointerDrag, PointerDragOptions, PointerDragStartEvent, PointerDragMoveEvent, PointerDragEndEvent } from "./gizmo/pointer-drag.js";
+export { createAxisDragGizmo, attachAxisDragGizmoToNode, disposeAxisDragGizmo } from "./gizmo/axis-drag-gizmo.js";
+export type { AxisDragGizmo, AxisDragGizmoOptions } from "./gizmo/axis-drag-gizmo.js";
+export { createPlaneDragGizmo, attachPlaneDragGizmoToNode, disposePlaneDragGizmo } from "./gizmo/plane-drag-gizmo.js";
+export type { PlaneDragGizmo, PlaneDragGizmoOptions } from "./gizmo/plane-drag-gizmo.js";
+export { createPlaneRotationGizmo, attachPlaneRotationGizmoToNode, disposePlaneRotationGizmo } from "./gizmo/plane-rotation-gizmo.js";
+export type { PlaneRotationGizmo, PlaneRotationGizmoOptions } from "./gizmo/plane-rotation-gizmo.js";
+export { createAxisScaleGizmo, attachAxisScaleGizmoToNode, disposeAxisScaleGizmo } from "./gizmo/axis-scale-gizmo.js";
+export type { AxisScaleGizmo, AxisScaleGizmoOptions } from "./gizmo/axis-scale-gizmo.js";
+export { createPositionGizmo, attachPositionGizmoToNode, setPositionGizmoLocalCoordinates, disposePositionGizmo } from "./gizmo/composite-gizmos.js";
+export type { PositionGizmo, PositionGizmoOptions } from "./gizmo/composite-gizmos.js";
+export { createRotationGizmo, attachRotationGizmoToNode, setRotationGizmoLocalCoordinates, disposeRotationGizmo } from "./gizmo/composite-gizmos.js";
+export type { RotationGizmo, RotationGizmoOptions } from "./gizmo/composite-gizmos.js";
+export { createScaleGizmo, attachScaleGizmoToNode, setScaleGizmoLocalCoordinates, disposeScaleGizmo } from "./gizmo/composite-gizmos.js";
+export type { ScaleGizmo, ScaleGizmoOptions } from "./gizmo/composite-gizmos.js";
+export { createCameraGizmo, attachCameraGizmoToCamera, disposeCameraGizmo } from "./gizmo/camera-gizmo.js";
+export type { CameraGizmo, CameraGizmoOptions } from "./gizmo/camera-gizmo.js";
+export { createLightGizmo, attachLightGizmoToLight, disposeLightGizmo } from "./gizmo/light-gizmo.js";
+export type { LightGizmo, LightGizmoOptions } from "./gizmo/light-gizmo.js";
+export { createBoundingBoxGizmo, attachBoundingBoxGizmoToNode, disposeBoundingBoxGizmo } from "./gizmo/bounding-box-gizmo.js";
+export type { BoundingBoxGizmo, BoundingBoxGizmoOptions } from "./gizmo/bounding-box-gizmo.js";
 
 // ─── Low-level (for advanced/custom rendering) ──────────────────────
 export type { EnvironmentTextures } from "./loader-env/load-env.js";

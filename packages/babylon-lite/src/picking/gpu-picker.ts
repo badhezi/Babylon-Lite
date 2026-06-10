@@ -199,6 +199,13 @@ export async function pickAsync(picker: GpuPicker, x: number, y: number, options
     const tempBuffers: GPUBuffer[] = [];
     for (let mi = 0; mi < meshCount; mi++) {
         const mesh = meshes[mi]!;
+        // Skip meshes explicitly marked non-pickable.  Mirrors BJS
+        // `isPickable = false` — lets gizmos toggle display-only helpers
+        // (e.g. the rotation-sector display plane) out of the picker without
+        // affecting their rendering or hiding them from picks via `visible`.
+        if (mesh.pickable === false) {
+            continue; // not drawn AND not given an id (skipped identically below)
+        }
         if (pickFilter && !pickFilter(mesh)) {
             continue; // excluded from picking → not drawn AND not given an id (skipped identically below)
         }
@@ -304,6 +311,9 @@ export async function pickAsync(picker: GpuPicker, x: number, y: number, options
     let scanId = 1;
     for (let mi = 0; mi < meshCount; mi++) {
         const mesh = meshes[mi]!;
+        if (mesh.pickable === false) {
+            continue; // skipped identically to the draw pass above so scanId stays aligned with the ids
+        }
         if (pickFilter && !pickFilter(mesh)) {
             continue; // skipped identically to the draw pass above so scanId stays aligned with the ids
         }
