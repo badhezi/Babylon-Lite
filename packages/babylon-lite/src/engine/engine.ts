@@ -3,6 +3,7 @@ import type { Texture2D, Texture2DOptions } from "../texture/texture-2d.js";
 import { _setHpmAllocator } from "../math/_matrix-allocator.js";
 import type { RenderTarget } from "./render-target.js";
 import { createRenderTarget } from "./render-target.js";
+import type { CaptureService } from "./screenshot-readback.js";
 
 /** Babylon Lite version string. */
 export const VERSION = "0.1.0";
@@ -100,6 +101,26 @@ export interface EngineContext {
     /** @internal */
     _cbs: GPUCommandBuffer[];
 
+    /** @internal Pending `captureScreenshot` requests. Serviced by `renderFrame` on a
+     *  subsequent frame (one shared copy of the swapchain texture resolves all queued
+     *  requests), then cleared. Undefined when nothing is waiting so non-capturing frames
+     *  pay nothing. */
+    _captureQueue?: { resolve: (s: import("./screenshot.js").Screenshot) => void; reject: (e: unknown) => void }[];
+
+    /** @internal Set once the swapchain has been reconfigured with COPY_SRC for screenshot
+     *  readback. Off by default so non-capturing scenes keep a compression-friendly
+     *  RENDER_ATTACHMENT-only swapchain; flipped on the first capture by the capture service
+     *  and honoured by device-loss recovery. */
+    _swapchainCopySrc?: boolean;
+
+    /** @internal Screenshot readback hook, dynamically installed by `captureScreenshot` on
+     *  first use. `renderFrame` calls it once per frame via optional chaining; it records the
+     *  swapchain copy into the frame encoder (reconfiguring the swapchain with COPY_SRC the
+     *  first time, then copying on the following frame). Kept off `EngineContext` until a
+     *  capture is requested so the copy/unpack code (`screenshot-readback.js`) stays out of
+     *  every bundle that never captures a frame. */
+    _captureService?: CaptureService;
+
     /** @internal Per-frame floating-origin offset updater. Set when the engine
      *  was created with `useFloatingOrigin: true` (which requires
      *  `useHighPrecisionMatrix: true`). Undefined when FO is off — scene
@@ -134,6 +155,19 @@ export interface EngineContext {
     _makePackMeshWorld?: (
         scene: import("../scene/scene-core.js").SceneContext
     ) => (view: Float32Array, mat: import("../math/types.js").Mat4 | Float32Array | Float64Array, offsetFloats: number, srcOffsetFloats: number) => void;
+
+    /** @internal Active-camera `worldMatrixVersion` for the lights UBO version,
+     *  and the floating-origin offset applier for positional light entries.
+     *  Both are set only when the engine was created with
+     *  `useFloatingOrigin: true` (dynamic-imported from
+     *  `large-world/floating-origin.js`). The lights UBO folds
+     *  `engine._lightFoVersion?.(scene) ?? 0` into its version and calls
+     *  `engine._applyLightFoOffset?.(scratch, scene)` after filling;
+     *  non-LWR engines leave both undefined so the FO offset code stays out of
+     *  their light bundles (mirrors `_makePackMeshWorld` for mesh worlds). */
+    _lightFoVersion?: (scene: import("../scene/scene-core.js").SceneContext) => number;
+    /** @internal See `_lightFoVersion`. */
+    _applyLightFoOffset?: (data: Float32Array, scene: import("../scene/scene-core.js").SceneContext) => void;
 }
 
 /**
@@ -275,6 +309,11 @@ export async function createEngine(canvas: RenderCanvas, options?: EngineOptions
 
     const format = navigator.gpu.getPreferredCanvasFormat();
     const alphaMode: GPUCanvasAlphaMode = options?.alphaMode ?? "opaque";
+    // Plain RENDER_ATTACHMENT swapchain by default — deliberately no COPY_SRC. Marking the
+    // swapchain copyable can force some drivers to drop lossless framebuffer compression, so
+    // scenes that never take a screenshot must not pay for it. `captureScreenshot` lazily
+    // reconfigures the swapchain with COPY_SRC on first use (see `_ensureSwapchainCapturable`),
+    // keeping the public API unchanged while costing non-capturing scenes nothing.
     context.configure({ device, format, alphaMode });
 
     const versionToLog = `Babylon Lite v${VERSION}`;
@@ -315,13 +354,17 @@ export async function createEngine(canvas: RenderCanvas, options?: EngineOptions
     // undefined. Tree-shakers drop the module from non-LWR bundles.
     let _wrapRenderableForFO: EngineContext["_wrapRenderableForFO"];
     let _makePackMeshWorld: EngineContext["_makePackMeshWorld"];
+    let _lightFoVersion: EngineContext["_lightFoVersion"];
+    let _applyLightFoOffset: EngineContext["_applyLightFoOffset"];
     if (useFO) {
-        const [{ wrapRenderableForFO }, { makePackMeshWorld }] = await Promise.all([
+        const [{ wrapRenderableForFO, lightFoVersion, applyLightFoOffset }, { makePackMeshWorld }] = await Promise.all([
             import("../large-world/floating-origin.js"),
             import("../large-world/pack-mat4-with-offset.js"),
         ]);
         _wrapRenderableForFO = wrapRenderableForFO;
         _makePackMeshWorld = makePackMeshWorld;
+        _lightFoVersion = lightFoVersion;
+        _applyLightFoOffset = applyLightFoOffset;
     }
 
     // Engine-owned swapchain target — a color-only, single-sample RT that wraps the
@@ -350,6 +393,8 @@ export async function createEngine(canvas: RenderCanvas, options?: EngineOptions
         _cbs: [],
         _wrapRenderableForFO,
         _makePackMeshWorld,
+        _lightFoVersion,
+        _applyLightFoOffset,
     };
 
     // Size the canvas backing store first (so the swap texture is acquired at the final
@@ -498,6 +543,10 @@ export function renderFrame(engine: EngineContext, delta: number): void {
     }
 
     const finalEncoder = engine._currentEncoder;
+    // Screenshot readback hook — undefined (a no-op optional call) until `captureScreenshot`
+    // lazily installs it, so non-capturing engines keep this to a single short-circuit and
+    // ship none of the readback code. The service records its copy into this frame's encoder.
+    engine._captureService?.(engine, finalEncoder);
     engine._cbs[0] = finalEncoder.finish();
     engine._device.queue.submit(engine._cbs);
     engine.drawCallCount = drawCalls;
