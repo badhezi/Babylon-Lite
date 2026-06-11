@@ -4,6 +4,8 @@
 // ─── Core ────────────────────────────────────────────────────────────
 export { createEngine, startEngine, stopEngine, renderFrame, resizeEngine, setEngineSize, disposeEngine, VERSION } from "./engine/engine.js";
 export type { EngineContext, EngineOptions, RenderCanvas } from "./engine/engine.js";
+export { captureScreenshot } from "./engine/screenshot.js";
+export type { Screenshot } from "./engine/screenshot.js";
 export {
     createSceneContext,
     createDefaultCamera,
@@ -55,6 +57,10 @@ export { createRenderTargetTexture } from "./texture/rtt.js";
 // Pooled GPU samplers (same descriptor → same GPUSampler). Public so consumers building their own
 // sampled-texture wrappers around managed render targets don't have to reach into `engine._device`.
 export { getOrCreateSampler, clearSamplerCache } from "./resource/gpu-pool.js";
+// acquireTexture/releaseTexture let a consumer register the lifetime of its OWN GPU texture in Lite's
+// ref-count pool, so a texture it creates (e.g. a mipped render texture for a Hi-Z pyramid) survives a
+// ShaderMaterial's per-version release/acquire cycle instead of being destroyed at count 0.
+export { acquireTexture, releaseTexture } from "./resource/gpu-pool.js";
 export { enableSceneTransmission, enableRenderTaskTransmission } from "./frame-graph/transmission.js";
 export type { TransmissionOptions, SceneColorGrab } from "./frame-graph/transmission.js";
 
@@ -83,8 +89,6 @@ export { createBloomPostProcessTask } from "./post-process/bloom.js";
 export type { BloomPostProcessTask, BloomPostProcessTaskConfig } from "./post-process/bloom.js";
 export { createDepthOfFieldPostProcessTask, DepthOfFieldBlurLevel } from "./post-process/depth-of-field.js";
 export type { DepthOfFieldPostProcessTask, DepthOfFieldPostProcessTaskConfig } from "./post-process/depth-of-field.js";
-export { createSsgiPostProcessTask } from "./post-process/ssgi.js";
-export type { SsgiPostProcessTask, SsgiPostProcessTaskConfig } from "./post-process/ssgi.js";
 
 // ─── Camera ──────────────────────────────────────────────────────────
 export { createArcRotateCamera } from "./camera/arc-rotate.js";
@@ -131,6 +135,8 @@ export {
 } from "./mesh/mesh-factories.js";
 export { createSphereData } from "./mesh/create-sphere.js";
 export type { SphereMeshData } from "./mesh/create-sphere.js";
+export { createCylinderData } from "./mesh/create-cylinder.js";
+export type { CylinderData } from "./mesh/create-cylinder.js";
 export { createTorusKnotData } from "./mesh/create-torus-knot.js";
 export type { TorusKnotData, TorusKnotOptions } from "./mesh/create-torus-knot.js";
 export { createCsgFromMesh, csgSubtract, csgIntersect, csgUnion, createMeshFromCsg } from "./mesh/csg.js";
@@ -150,6 +156,7 @@ export { createStandardMaterial } from "./material/standard/create-standard-mate
 export { createStandardNoColorMaterialView } from "./material/standard/no-color-view.js";
 export { createPbrMaterial } from "./material/pbr/pbr-material.js";
 export { createShaderMaterial, setShaderUniform, setShaderTexture, setShaderFloat, setShaderVector3, setShaderMatrix } from "./material/shader/shader-material.js";
+export { createShaderNoColorMaterialView } from "./material/shader/no-color-view.js";
 export { createGridMaterial } from "./material/grid/grid-material.js";
 export type { GridMaterialOptions, GridVec3 } from "./material/grid/grid-material.js";
 export { createPbrNoColorMaterialView } from "./material/pbr/no-color-view.js";
@@ -236,7 +243,6 @@ export { mat4Identity } from "./math/mat4-identity.js";
 export { mat4Scale } from "./math/mat4-scale.js";
 export { mat4Compose } from "./math/mat4-compose.js";
 export { mat4Invert } from "./math/mat4-invert.js";
-export { mat4InvertInto } from "./math/mat4-invert-into.js";
 export type { Vec3, Vec3Tuple, Mat4 } from "./math/types.js";
 
 // ─── Color ───────────────────────────────────────────────────────────
@@ -252,7 +258,6 @@ export {
     flushThinInstances,
     setThinInstanceColors,
     setThinInstanceColor,
-    setThinInstanceDistanceThin,
     enableThinInstanceGpuCulling,
 } from "./mesh/thin-instance.js";
 export type { ThinInstanceData } from "./mesh/thin-instance.js";
