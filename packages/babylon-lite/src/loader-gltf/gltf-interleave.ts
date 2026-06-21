@@ -2,9 +2,12 @@
  * Interleaved (strided) glTF vertex-buffer support — dynamically imported.
  *
  * The engine renders interleaved attributes genuinely: the raw strided
- * bufferView slice is uploaded ONCE as a shared GPU buffer and bound to each
- * attribute at its byte offset with the pipeline's vertex `arrayStride` set to
- * the bufferView byteStride. The loader never rewrites the asset.
+ * bufferView slice is uploaded ONCE as a shared GPU buffer, bound to each
+ * attribute slot at byte offset 0, with the per-attribute byte offset encoded in
+ * the pipeline vertex layout (`attributes[].offset`) and `arrayStride` set to the
+ * bufferView byteStride. This mirrors stock Babylon.js's WebGPU vertex state and
+ * avoids a non-zero `setVertexBuffer` bind offset, which corrupts vertex fetch on
+ * some AMD (Renoir) / Dawn paths. The loader never rewrites the asset.
  *
  * This whole module is loaded via `await import()` only when an asset actually
  * contains an interleaved bufferView, so non-interleaved scenes pay ZERO bundle
@@ -49,7 +52,8 @@ export interface AccessorInterleave {
     _bufferView: number;
     /** @internal Interleave byte stride (bufferView.byteStride) → pipeline arrayStride. */
     _stride: number;
-    /** @internal Attribute byte offset within the bufferView → setVertexBuffer bind offset. */
+    /** @internal Attribute byte offset within the bufferView → pipeline vertex layout
+     *  `attributes[].offset` (the shared buffer is bound at offset 0). */
     _offset: number;
     /** @internal glTF component type (FLOAT, UNSIGNED_SHORT, …). */
     _componentType: number;
@@ -232,7 +236,8 @@ export function buildInterleavedPartial(json: any, binChunk: DataView, primitive
 }
 
 /** Build the GPU geometry for an interleaved mesh: one shared buffer per
- *  bufferView for strided attributes (bound at offset with arrayStride), tight
+ *  bufferView for strided attributes (bound at offset 0; the per-attribute byte
+ *  offset goes into the pipeline vertex layout, matching stock Babylon.js), tight
  *  attributes get their own buffer — byte-identical to non-interleaved meshes.
  *  The raw `_slice` is intentionally retained on `_vb` so the CPU copy can be
  *  de-strided lazily later (see {@link installLazyCpu}). */
@@ -249,6 +254,10 @@ function buildInterleavedGpu(engine: EngineContext, m: GltfMeshData): MeshGPU {
         }
         return b;
     };
+    // Cache key encodes both stride AND byte offset per attribute: the offsets are
+    // now baked into the pipeline vertex layout (attributes[].offset), so two meshes
+    // with identical strides but different offsets need distinct pipelines.
+    const k = (a: AccessorInterleave | undefined) => `${a?._stride ?? 0},${a?._offset ?? 0}`;
     return {
         positionBuffer: vbuf(vbsrc._p, m._positions)!,
         normalBuffer: vbuf(vbsrc._n, m._normals)!,
@@ -260,7 +269,7 @@ function buildInterleavedGpu(engine: EngineContext, m: GltfMeshData): MeshGPU {
         indexCount: m._indexCount,
         indexFormat: (m._indices instanceof U32 ? "uint32" : "uint16") as GPUIndexFormat,
         _vbLayout: vbsrc,
-        _vbKey: `vb${vbsrc._p?._stride ?? 0}.${vbsrc._n?._stride ?? 0}.${vbsrc._t?._stride ?? 0}.${vbsrc._u?._stride ?? 0}`,
+        _vbKey: `vb${k(vbsrc._p)}.${k(vbsrc._n)}.${k(vbsrc._t)}.${k(vbsrc._u)}`,
     };
 }
 
