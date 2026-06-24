@@ -19,7 +19,7 @@ Pages are ordered by how commonly Babylon Lite users reach for them — start wi
 
 | Doc                                                                       | Module                          | Scope                                                                                          |
 | ------------------------------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [00-overview.md](/lite/architecture/00-overview)                                          | Overview                        | Repository structure, public API                                                               |
+| [00-overview.md](/docs/lite/architecture/00-overview.md)                                          | Overview                        | Repository structure, public API                                                               |
 | [01-scene.md](/lite/architecture/01-scene)                                                | Scene                           | SceneContext, one-way ownership                                                                |
 | [02-camera.md](/lite/architecture/02-camera)                                              | Camera                          | ArcRotateCamera + FreeCamera, controls                                                         |
 | [03-lights.md](/lite/architecture/03-lights)                                              | Lights                          | Hemispheric, directional, point, spot + shared lights UBO for Standard/PBR                     |

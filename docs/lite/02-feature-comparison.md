@@ -345,6 +345,6 @@ This table tracks the current state and will be updated regularly as the gaps cl
 ## Next steps
 
 - 🚀 **[Getting Started](/lite/01-getting-started)** — install Lite, learn the mental model, and render your first scene.
-- 🔁 **[Porting Guide](/lite/03-porting-guide)** — translate a Babylon.js scene to Babylon Lite, side by side.
-- 🧱 **[Architecture docs](/lite/architecture/00-overview)** — deep dives into the engine internals.
+- 🔁 **[Porting Guide](/docs/lite/03-porting-guide.md)** — translate a Babylon.js scene to Babylon Lite, side by side.
+- 🧱 **[Architecture docs](/docs/lite/architecture/00-overview.md)** — deep dives into the engine internals.
 - 🏠 **[Welcome](/lite)** — the big-picture introduction and "which engine should I use?" decision tree.
